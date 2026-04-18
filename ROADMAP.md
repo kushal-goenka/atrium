@@ -1,104 +1,120 @@
 # Roadmap
 
-Milestones are scoped to make each release individually deployable and useful. We don't ship M1 by skipping half of M0.
+**Heads-up for new contributors / AI sessions**: the always-current priority list lives in [`docs/PROJECT.md`](docs/PROJECT.md) § "Next up". This document is the narrative version — when + why. For "what do I pick up next", read PROJECT.md.
 
-## M0 — Beautiful read-only browser (weeks 1–2)
+---
 
-The "show don't tell" release. A platform engineer should be able to clone atrium, run `pnpm dev`, and immediately see a browse experience nicer than Claude Code's CLI listing.
+## v0.1 — alpha (shipped)
 
-- [x] Vision, architecture, security docs
-- [ ] Next.js + Tailwind + shadcn scaffold
-- [ ] Plugin manifest type definitions (Anthropic-compatible)
-- [ ] Seed catalog (10 realistic sample plugins across categories)
-- [ ] Browse page: grid, search, category filter
-- [ ] Detail page: manifest, install snippet (copy-to-clipboard), version history
-- [ ] Logo, favicon, brand
-- [ ] Dark mode
-- [ ] Keyboard shortcuts (⌘K search)
+The "show-don't-tell" release. Clone, run, and the full product loop works end-to-end against seeded data.
 
-**Ship criterion**: a screenshot of the browse page is good enough to tweet.
+- [x] Catalog, plugin detail, search/filter, admin dashboard, add-source
+- [x] Multi-provider support (Claude Code, OpenAI, Gemini, MCP, generic)
+- [x] Version pinning, forking, field-aware fork-diff
+- [x] LLM provider vault (AES-256-GCM), AI curation engine
+- [x] Multi-client install matrix (Claude CLI, Codex, Cursor, Gemini CLI, Aider, raw MCP)
+- [x] Mock user switcher + per-user profile pages
+- [x] Optional auth modes: `open`, `admin-password`
+- [x] Public `/api/v1` + bearer tokens + OpenAPI 3.1
+- [x] Suggestions forum with vote + status triage
+- [x] User-contributed skill uploads with admin review
+- [x] Air-gap posture (open / allowlist / strict)
+- [x] Docker Compose with optional `ollama` + `otel-collector` profiles
 
-## M1 — Federation and persistence (weeks 3–5)
+Tests: 94 unit / 24 e2e. CI: typecheck + unit + build → gated e2e.
 
-Turn the prototype into a real thing backed by a database, ingesting from real sources.
+---
 
-- [ ] Prisma schema + migrations
-- [ ] SQLite dev default, Postgres prod
-- [ ] Source adapter: `git` (clone + parse marketplace.json)
-- [ ] Source adapter: `http` (fetch raw URL)
-- [ ] Ingest job runner (in-process cron)
-- [ ] Anthropic-compatible `/mkt/marketplace.json` endpoint
-- [ ] Plugin archive streaming endpoint
-- [ ] Docker Compose (app + postgres)
+## v0.1.x — close the stubs (next)
 
-**Ship criterion**: point atrium at `github.com/anthropics/claude-code/examples/marketplace` and see the plugins render.
+Small-but-meaningful cleanups that unblock future work. Ordered by dependency.
 
-## M2 — Auth, RBAC, admin (weeks 6–8)
+- [ ] **Plugin-DB migration** — move `data/plugins.ts` into `Plugin` + `PluginVersion` Prisma rows. Unblocks install telemetry and user-contribution publishing.
+- [ ] **Install event recording** — write `Install` rows on `/mkt/plugins/…` fetches (and on copy-command clicks as intent signal).
+- [ ] **User-contribution source surface** — approved `UploadedSkill` rows appear in browse under a `user-contributions` source.
+- [ ] **Seed demo data** — extend `prisma/seed.ts` with plugins + suggestions + uploads for the public demo instance.
 
-Make it safe to put behind a company firewall.
+**Ship criterion**: the four "stubbed" callouts in CLAUDE.md are gone.
 
-- [ ] NextAuth with OIDC provider
-- [ ] Four built-in roles: viewer / installer / curator / admin
-- [ ] Admin UI: sources (add/remove/re-sync), plugins (approve/reject/quarantine), users (invite, assign roles)
-- [ ] Policy engine v1: allow-list per source
-- [ ] Audit log (immutable, paginated UI)
-- [ ] API tokens for programmatic access
+---
 
-**Ship criterion**: a platform engineer at a real company deploys atrium and the security team signs off.
+## v0.2 — enterprise SSO + air-gapped artifact serving
 
-## M3 — Observability (weeks 9–10)
+"Safe to put behind a company firewall."
 
-Know what's happening.
+- [ ] **OIDC + SAML** via NextAuth. Retire the cookie-backed acting-as switcher for prod.
+- [ ] **Role enforcement** — four built-in roles act as real permission gates, not display metadata.
+- [ ] **Signed artifact serving** — `/mkt/plugins/[slug]/[version].tar.gz` streams tarballs from configured storage (filesystem / S3 / MinIO). Optional cosign signing. Unlocks full `strict` air-gap mode.
+- [ ] **Four-eyes approval mode** — `ATRIUM_FOUR_EYES=true` enforces two-admin approval on destructive actions.
+- [ ] **Merge-from-upstream for forks** — three-way merge UI using the existing `lib/diff.ts`.
 
-- [ ] OTEL SDK wired through all HTTP + ingest paths
-- [ ] `atrium.install.issued` custom metric
-- [ ] Admin metrics page: top plugins, recent installs, source health
-- [ ] OTLP receiver endpoint for plugin-side telemetry
-- [ ] Dashboards: Grafana JSON, pre-built
+**Ship criterion**: an enterprise security team can read `SECURITY.md`, run the hardening checklist, and sign off without waivers.
 
-**Ship criterion**: an admin can answer "which plugins does my org use?" in under 30 seconds.
+---
 
-## M4 — Policy and scanning (weeks 11–14)
+## v0.3 — observability
 
-From "distribute code" to "govern code."
+"Know what's happening in production."
 
-- [ ] Scanner framework with pluggable scanners
-- [ ] Scanner: hooks that run shell
-- [ ] Scanner: MCP servers calling external hosts
-- [ ] Scanner: dependency CVEs (via OSV.dev)
-- [ ] Policy engine v2: per-role, version-pinned, CVE-gated, quarantine-on-signal
-- [ ] Four-eyes mode for destructive admin actions
-- [ ] CVE notification fan-out (email, Slack, webhook)
+- [ ] **OTEL end-to-end** — spans on every HTTP handler, Prisma query, ingest job, server action. Custom attributes (`atrium.plugin.slug`, `atrium.source.id`, `atrium.user.role`).
+- [ ] **Admin metrics page** — `/admin/metrics` with per-plugin trends, sync latency, top providers, policy decisions over time. Queries `UsageDaily` aggregates.
+- [ ] **Grafana dashboards** — pre-built JSON in `deploy/grafana/` for the OTEL metrics.
+- [ ] **OTLP receiver** — plugins can send their own spans through Atrium to the org's OTEL backend.
 
-**Ship criterion**: a CISO can read SECURITY.md and be comfortable.
+**Ship criterion**: an admin can answer "which plugins do we use, and is any of them degraded?" in under 30 seconds.
 
-## M5 — Release engineering (weeks 15–16)
+---
 
-Make it trustworthy to consume.
+## v0.4 — policy + scanners + notifications
 
-- [ ] Signed Docker images (cosign)
-- [ ] SBOM (CycloneDX) on every release
-- [ ] Reproducible builds
-- [ ] Release GitHub Action with provenance
-- [ ] Bug bounty program bootstrapped
+"From *distribute code* to *govern code*."
 
-**Ship criterion**: a user can verify the release they downloaded back to our source commit.
+- [ ] **Policy engine** — small rule DSL stored in `Policy` rows. Evaluates per request: role × source × signal severity × CVE-state → allow / deny / quarantine.
+- [ ] **Scanner framework** — `lib/scanners/*.ts`, pluggable. Ship three:
+  - `hook-shell` — flags plugins installing shell hooks
+  - `mcp-scope` — flags MCP servers calling unknown external hosts
+  - `cve` — cross-references plugin dependencies with OSV.dev
+- [ ] **Notifications** — fanout to email / Slack / webhook on: new high-severity signal, CVE matched on installed plugin, admin action requires approval.
+- [ ] **CVE auto-gate** — `ATRIUM_CVE_POLL=true` polls OSV.dev hourly; matching plugins auto-transition to `quarantined`.
 
-## Beyond v1 (not scheduled)
+**Ship criterion**: a CISO accepts SECURITY.md at face value.
+
+---
+
+## v0.5 — trust, release engineering, federation
+
+"Trustworthy to consume, discoverable across orgs."
+
+- [ ] **Signed releases** — GitHub Actions publishes cosign-signed Docker images + SBOM (CycloneDX) + reproducible builds.
+- [ ] **Release provenance** — SLSA Level 3 for the release workflow.
+- [ ] **Bug bounty** — HackerOne program bootstrapped.
+- [ ] **Federated suggestions** — opt-in protocol for Atriums to share suggestion rows across orgs (ActivityPub-lite).
+- [ ] **`.well-known/atrium.json`** — client-discovery endpoint for clients that want to auto-detect Atrium instances.
+
+**Ship criterion**: a user can verify a binary release back to the source commit. Two Atrium deployments can share suggestions without a central server.
+
+---
+
+## Not scheduled
+
+These land when the problem they solve matters.
 
 - Multi-tenant SaaS mode
-- Plugin authoring UI
-- Non-Anthropic plugin formats (OpenAI, Gemini, generic)
-- Plugin marketplace peer-to-peer federation protocol
-- Paid plugin support (Stripe)
+- Plugin authoring UI (write a plugin in the browser)
+- Paid plugin / billing layer (Stripe)
+- Mobile app
 - Self-service onboarding for plugin authors
+
+---
 
 ## How to propose a change
 
-Open an issue with `[proposal]` in the title and the following sections:
-- **Problem** (who hits it and when)
-- **Non-proposal** (what this isn't)
-- **Sketch** (rough approach, not a final design)
-- **Alternatives** (what we'd do instead)
+1. Read [`docs/PROJECT.md`](docs/PROJECT.md) to make sure it's not already queued.
+2. Open an issue with `[proposal]` in the title, sections:
+   - **Problem** (who hits it and when)
+   - **Non-proposal** (what this isn't)
+   - **Sketch** (rough approach)
+   - **Alternatives** (what we'd do instead)
+3. For durable design decisions, an ADR lands with the PR in [`docs/decisions/`](docs/decisions/).
 
-Small PRs land. Big PRs start as a proposal issue so we can discuss scope before anyone writes code.
+Small PRs land. Big PRs start as a proposal issue.
