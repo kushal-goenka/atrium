@@ -11,7 +11,7 @@ const PROVIDERS = [
   { key: "azure-openai", label: "Azure OpenAI", baseHint: "https://{name}.openai.azure.com/openai/deployments/{id}", modelHint: "gpt-4o", local: false },
   { key: "gemini", label: "Google Gemini", baseHint: "", modelHint: "gemini-2.5-flash", local: false },
   { key: "litellm-proxy", label: "LiteLLM proxy", baseHint: "https://litellm.yourcompany.com", modelHint: "gpt-4o-mini", local: false },
-  { key: "ollama", label: "Ollama (local)", baseHint: "http://ollama:11434/v1", modelHint: "llama3.2", local: true },
+  { key: "ollama", label: "Ollama (local)", baseHint: "http://ollama:11434/v1", modelHint: "gemma3:4b", local: true },
   { key: "custom", label: "Custom (OpenAI-schema)", baseHint: "https://…", modelHint: "your-model", local: false },
 ];
 

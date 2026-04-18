@@ -7,7 +7,7 @@ export function FlagForRescan({ pluginSlug }: { pluginSlug: string }) {
 
   function onFlag() {
     setState("flagging");
-    // v0.1 is stubbed — in M4 this enqueues a scanner run for the plugin.
+    // v0.1 is stubbed — in v0.4 this enqueues a scanner run for the plugin.
     setTimeout(() => setState("flagged"), 500);
   }
 

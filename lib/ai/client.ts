@@ -63,7 +63,7 @@ export async function complete(req: CompletionRequest): Promise<CompletionRespon
       callOpenAI(
         apiKey, // unused — omitted from headers below
         picked.baseUrl ?? "http://localhost:11434/v1",
-        picked.defaultModel ?? "llama3.2",
+        picked.defaultModel ?? "gemma3:4b",
         req,
         { sendAuth: false },
       ),

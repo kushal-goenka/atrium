@@ -16,7 +16,7 @@ export function ApprovalActions({
 
   function onApprove() {
     setState("approving");
-    // v0.1 is stubbed — in M2 this calls a Server Action that updates
+    // v0.1 is stubbed — in v0.2 this calls a Server Action that updates
     // Plugin.policyState and writes an AuditLog row.
     setTimeout(() => setState("approved"), 600);
   }

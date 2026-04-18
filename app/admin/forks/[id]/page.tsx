@@ -114,7 +114,7 @@ export default async function ForkDiffPage(
           </ul>
 
           <div className="mt-4 rounded-[var(--radius)] border border-[color:var(--color-info)]/30 bg-[color:var(--color-info)]/10 px-4 py-3 text-[12.5px] text-[color:var(--color-info)]">
-            <span className="font-semibold">Merging from upstream</span> lands in M2 — for now,
+            <span className="font-semibold">Merging from upstream</span> lands in v0.2 — for now,
             this diff lets you review changes before manually updating the fork snapshot.
           </div>
         </section>

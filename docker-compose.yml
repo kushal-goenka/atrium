@@ -51,12 +51,12 @@ services:
   # Local LLM sidecar. Register it in Admin → LLM providers as:
   #   provider  = ollama
   #   baseUrl   = http://ollama:11434/v1
-  #   model     = llama3.2  (or any model you've pulled below)
+  #   model     = gemma3:4b  (or any model you've pulled below)
   #
   # First-time setup pulls a model into the volume:
-  #   docker compose --profile ollama exec ollama ollama pull llama3.2
+  #   docker compose --profile ollama exec ollama ollama pull gemma3:4b
   #
-  # Lightweight options: qwen2.5:3b, llama3.2:1b (fits in <2 GB)
+  # Lightweight options: gemma3:1b, qwen2.5:3b (fits in <2 GB)
   ollama:
     image: ollama/ollama:latest
     restart: unless-stopped

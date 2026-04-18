@@ -3,8 +3,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { findPlugin, findSource, plugins } from "@/data/plugins";
 import { Badge } from "@/components/badge";
-import { CopyCommand } from "@/components/copy-command";
 import { FlagForRescan } from "@/components/flag-for-rescan";
+import { InstallPanel } from "@/components/install-panel";
 import { CurationPanel } from "@/components/curation-panel";
 import { PinForkPanel } from "@/components/pin-fork-panel";
 import { formatNumber, formatRelative } from "@/lib/utils";
@@ -48,8 +48,6 @@ export default async function PluginDetail(
   if (!plugin) return notFound();
   const source = findSource(plugin.sourceId);
   const brand = getBranding();
-
-  const installCommand = `/plugin install ${plugin.slug}@${plugin.version}`;
 
   const trustLabel =
     source?.trust === "official"
@@ -341,25 +339,11 @@ export default async function PluginDetail(
         </div>
 
         <aside className="space-y-5 lg:sticky lg:top-20 lg:self-start">
-          <div className="rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] p-5">
-            <h2 className="text-[13px] font-semibold tracking-tight text-[color:var(--color-fg)]">
-              Install
-            </h2>
-            <p className="mt-1 text-[12.5px] text-[color:var(--color-fg-muted)]">
-              Run this in Claude Code, pointed at your registry.
-            </p>
-            <div className="mt-3">
-              <CopyCommand command={installCommand} />
-            </div>
-            <details className="mt-3 text-[12.5px]">
-              <summary className="cursor-pointer text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg)]">
-                First time? Add your registry.
-              </summary>
-              <div className="mt-2 space-y-2">
-                <CopyCommand command={`/plugin marketplace add https://${brand.atriumHostname}`} label="one-time setup" />
-              </div>
-            </details>
-          </div>
+          <InstallPanel
+            plugin={plugin}
+            hostname={brand.atriumHostname}
+            orgName={brand.orgName}
+          />
 
           {plugin.usage ? (
             <div className="rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] p-5">

@@ -34,6 +34,11 @@ Atrium is the thin, neutral control plane — **LiteLLM for plugin marketplaces*
   <img src="docs/screenshots/admin.png" alt="Admin dashboard" width="80%" />
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/user-profile.png" alt="User profile" width="80%" />
+  <br><em>Per-user profile with activity feed. Acting-as switcher in the nav.</em>
+</p>
+
 <details>
 <summary><b>Also: light theme · mobile · add-source · sources</b></summary>
 
@@ -132,15 +137,15 @@ If your threat model says "no plugin metadata leaves the cluster", register Olla
 # Bring up the atrium + postgres + ollama sidecar.
 docker compose --profile ollama up -d
 
-# Pull a lightweight model (~1-3 GB on disk).
-docker compose exec ollama ollama pull llama3.2
+# Pull a lightweight model (~3 GB on disk).
+docker compose exec ollama ollama pull gemma3:4b
 ```
 
 Then in Admin → LLM providers add:
 
 - Provider: **Ollama (local)**
 - Base URL: `http://ollama:11434/v1`
-- Default model: `llama3.2` (or whatever you pulled)
+- Default model: `gemma3:4b` (or whatever you pulled)
 
 The API-key field is disabled for local providers. Curation calls stay inside the Docker network.
 
@@ -165,18 +170,37 @@ The pin + fork + diff combination gives orgs full control over third-party code 
 - **Version pinning + forking** — pin any plugin; fork external plugins into your internal source with upstream snapshot preserved.
 - **LLM provider vault** — AES-256-GCM encrypted API keys, baseUrl-aware for LiteLLM-style proxies, Test button for round-trip verification.
 - **Add source** — server-validated form + Prisma-backed persistence; new sources appear immediately.
+- **Multi-client install matrix** — plugin detail ships commands for Claude Code (inline + CLI), OpenAI Codex, Cursor, Gemini CLI, Aider, and raw MCP JSON. Every client gets its native install path, not a generic snippet.
+- **User identity** — acting-as user switcher in the nav, per-user profile pages at `/users/[id]` showing role, team, and install activity. Audit actors link to profiles.
+- **Optional auth modes** — run `open` (no login, internal-network default), `admin-password` (single shared password gates `/admin/*`, browse stays open), or `sso` (OIDC/SAML — planned for v0.2).
 - **White-label theming** — `ATRIUM_ORG_NAME`, `ATRIUM_ORG_SHORT_NAME`, `ATRIUM_ORG_LOGO_URL`, `ATRIUM_ORG_URL`, `ATRIUM_SUPPORT_EMAIL`, `ATRIUM_PROPOSAL_URL`, `ATRIUM_ACCENT_HEX`.
-- **Users** — role table (admin / curator / installer / viewer). SSO-backed invitations land in M2.
 
-## What's coming next
+## Auth modes
 
-See [`ROADMAP.md`](ROADMAP.md). The headline items:
+Atrium doesn't force you into a login flow. Pick one of three `ATRIUM_AUTH_MODE` values:
 
-- **M1** — complete plugin-table migration + real ingestion at scale
-- **M2** — OIDC/SAML, four-eyes approval, full RBAC
-- **M3** — OpenTelemetry end-to-end, admin metrics page
-- **M4** — policy engine, scanners, CVE gating, notifications
-- **M5** — signed releases, SBOM, provenance, bug bounty
+| Mode | When to use | Configuration |
+|---|---|---|
+| **`open`** (default) | Already behind an SSO proxy, VPN, or private network. Everyone can browse and admin. | No config needed. |
+| **`admin-password`** | Public browse is fine but admin actions need gating. One shared password. | `ATRIUM_AUTH_MODE=admin-password` + `ATRIUM_ADMIN_PASSWORD=…` (≥8 chars). `AUTH_SECRET` is used to sign the session cookie. |
+| **`sso`** | Per-user identity, role-based permissions. | Arrives in **v0.2** with OIDC + SAML via NextAuth. |
+
+Sessions in `admin-password` mode are HMAC-signed cookies (no user database needed). Browse endpoints and `/mkt/marketplace.json` are always open — they serve the same content the catalog shows.
+
+## Roadmap
+
+Past releases:
+
+- **v0.1 (alpha, shipped)** — catalog, multi-provider support, LLM key vault, AI curation, pin + fork + diff, multi-client install matrix, user switcher, optional admin-password auth.
+
+Coming up:
+
+- **v0.2** — full per-user SSO (OIDC + SAML), four-eyes approval, full RBAC enforcement, public REST API for automation, signed user-contributed skill uploads.
+- **v0.3** — OpenTelemetry end-to-end, admin metrics page, plugin usage analytics per user/team.
+- **v0.4** — policy engine, scanners (hook-shell, MCP scope, CVE), notifications (Slack / webhook / email), suggestion forum.
+- **v0.5** — signed releases, SBOM, provenance, bug bounty. Air-gapped deployment guide (no external fetches at all).
+
+See [`ROADMAP.md`](ROADMAP.md) for per-release detail.
 
 ## Architecture at a glance
 

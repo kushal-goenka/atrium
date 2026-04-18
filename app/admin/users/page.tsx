@@ -1,15 +1,9 @@
 import Link from "next/link";
 import { Badge } from "@/components/badge";
+import { MOCK_USERS } from "@/lib/users";
+import { formatRelative } from "@/lib/utils";
 
 export const metadata = { title: "Users" };
-
-const MOCK_USERS = [
-  { email: "jordan@acme.corp", name: "Jordan Rhee", role: "admin", lastSeen: "just now" },
-  { email: "alice@acme.corp", name: "Alice Chen", role: "curator", lastSeen: "12m ago" },
-  { email: "priya@acme.corp", name: "Priya Patel", role: "installer", lastSeen: "2h ago" },
-  { email: "sam@acme.corp", name: "Sam Rivera", role: "installer", lastSeen: "4h ago" },
-  { email: "marco@acme.corp", name: "Marco Silva", role: "viewer", lastSeen: "1d ago" },
-];
 
 const ROLE_STYLE = {
   admin: "accent",
@@ -35,7 +29,7 @@ export default function UsersPage() {
           </p>
           <h1 className="mt-2 text-[24px] font-semibold tracking-tight">Users</h1>
           <p className="mt-1 max-w-2xl text-[13.5px] text-[color:var(--color-fg-muted)]">
-            Four built-in roles ship with Atrium. Custom roles arrive in M2 along with SSO-backed
+            Four built-in roles ship with Atrium. Custom roles arrive in v0.2 along with SSO-backed
             invitations. For now this view is read-only.
           </p>
         </div>
@@ -44,7 +38,7 @@ export default function UsersPage() {
           disabled
           className="inline-flex h-9 shrink-0 items-center rounded-md border border-dashed border-[color:var(--color-border)] px-3 text-[13px] font-medium text-[color:var(--color-fg-subtle)]"
         >
-          Invite user — M2
+          Invite user — v0.2
         </button>
       </header>
 
@@ -61,16 +55,21 @@ export default function UsersPage() {
             {MOCK_USERS.map((u) => (
               <tr key={u.email} className="hover:bg-[color:var(--color-bg-sunken)]">
                 <td className="px-4 py-3">
-                  <div className="font-medium">{u.name}</div>
+                  <Link
+                    href={`/users/${u.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {u.name}
+                  </Link>
                   <div className="font-mono text-[11.5px] text-[color:var(--color-fg-subtle)]">
-                    {u.email}
+                    {u.email}{u.team ? ` · ${u.team}` : ""}
                   </div>
                 </td>
                 <td className="px-4 py-3">
                   <Badge variant={ROLE_STYLE[u.role as keyof typeof ROLE_STYLE]}>{u.role}</Badge>
                 </td>
                 <td className="px-4 py-3 text-right font-mono text-[11.5px] text-[color:var(--color-fg-subtle)]">
-                  {u.lastSeen}
+                  {formatRelative(u.lastSeen)}
                 </td>
               </tr>
             ))}

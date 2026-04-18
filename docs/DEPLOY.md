@@ -216,11 +216,11 @@ Admin → LLM providers. You have three deployment shapes:
 
    ```bash
    docker compose --profile ollama up -d
-   docker compose exec ollama ollama pull llama3.2   # or qwen2.5:3b for <2GB
+   docker compose exec ollama ollama pull gemma3:4b   # or gemma3:1b for <2GB
    ```
 
    Register provider = `ollama`, `baseUrl = http://ollama:11434/v1`,
-   `defaultModel = llama3.2`. The API-key field is disabled for local providers.
+   `defaultModel = gemma3:4b`. The API-key field is disabled for local providers.
 
 All three shapes can coexist — Atrium uses the most-recently-updated enabled
 provider by default, and callers can request a specific provider via
@@ -288,7 +288,7 @@ Before a production cutover, complete the checklist in
 Highlights:
 
 - [ ] TLS-terminating reverse proxy in front of Atrium
-- [ ] OIDC or SAML (not magic links) — *coming in M2*
+- [ ] OIDC or SAML (not magic links) — *coming in v0.2*
 - [ ] `ATRIUM_ADMIN_EMAILS` set to bootstrap admins
 - [ ] `ATRIUM_FOUR_EYES=true` for destructive admin actions
 - [ ] `ATRIUM_CVE_POLL=true`

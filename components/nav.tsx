@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { Logo } from "./logo";
 import { ThemeToggle } from "./theme-toggle";
+import { UserSwitcher } from "./user-switcher";
 import { getBranding } from "@/lib/branding";
+import { currentUser, MOCK_USERS } from "@/lib/users";
+import { getAuthMode, isAdmin } from "@/lib/auth";
 
-export function Nav() {
+export async function Nav() {
   const brand = getBranding();
+  const user = await currentUser();
+  const authMode = getAuthMode();
+  const admin = await isAdmin();
 
   return (
     <header className="sticky top-0 z-30 border-b border-[color:var(--color-border)] bg-[color:var(--color-bg)]/80 backdrop-blur">
@@ -55,18 +61,34 @@ export function Nav() {
 
         <div className="ml-auto flex items-center gap-3">
           <ThemeToggle />
-          <a
-            href="https://github.com/kushal-goenka/atrium#readme"
-            className="hidden text-[13.5px] font-medium text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg)] sm:inline"
-          >
-            Docs
-          </a>
+          {authMode === "admin-password" ? (
+            admin ? (
+              <form action="/api/login" method="post">
+                <input type="hidden" name="_method" value="DELETE" />
+                <button
+                  type="submit"
+                  formAction="/api/login?_method=DELETE"
+                  className="text-[13.5px] font-medium text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg)]"
+                >
+                  Sign out
+                </button>
+              </form>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-2.5 py-1 text-[12.5px] font-medium hover:border-[color:var(--color-border-strong)]"
+              >
+                Sign in
+              </Link>
+            )
+          ) : null}
           <a
             href="https://github.com/kushal-goenka/atrium"
-            className="text-[13.5px] font-medium text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg)]"
+            className="hidden text-[13.5px] font-medium text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg)] sm:inline"
           >
             GitHub
           </a>
+          <UserSwitcher current={user} users={MOCK_USERS} />
         </div>
       </div>
     </header>

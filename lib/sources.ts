@@ -4,7 +4,7 @@ import { plugins } from "@/data/plugins";
 
 /**
  * Count of plugins observed for each source. Will be replaced by a DB query
- * once plugins migrate off the static fixture in M1.
+ * once plugins migrate off the static fixture in v0.1.x.
  */
 function pluginCountFor(sourceKey: string): number {
   return plugins.filter((p) => p.sourceId === sourceKey).length;
