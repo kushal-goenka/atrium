@@ -2,6 +2,7 @@ import Link from "next/link";
 import { plugins } from "@/data/plugins";
 import { listAllSources } from "@/lib/sources";
 import { Badge } from "@/components/badge";
+import { SyncSourceButton } from "@/components/sync-source-button";
 import { formatRelative } from "@/lib/utils";
 
 export const metadata = { title: "Sources" };
@@ -62,16 +63,21 @@ export default async function SourcesPage() {
                     {s.url ?? `(local, no URL)`}
                   </p>
                 </div>
-                <div className="text-right text-[12px] text-[color:var(--color-fg-subtle)]">
+                <div className="flex flex-col items-end gap-1 text-[12px] text-[color:var(--color-fg-subtle)]">
                   <div>
                     <span className="font-mono text-[color:var(--color-fg-muted)]">
                       {s.pluginCount}
                     </span>{" "}
                     plugins
+                    {s.lastSyncedAt ? (
+                      <span className="ml-2">· synced {formatRelative(s.lastSyncedAt)}</span>
+                    ) : null}
                   </div>
-                  {s.lastSyncedAt ? (
-                    <div className="mt-0.5">synced {formatRelative(s.lastSyncedAt)}</div>
-                  ) : null}
+                  <SyncSourceButton
+                    sourceKey={s.id}
+                    disabled={s.kind === "local"}
+                    disabledReason="Local sources upload fresh bundles rather than syncing."
+                  />
                 </div>
               </div>
 

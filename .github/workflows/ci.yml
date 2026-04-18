@@ -43,6 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: check
+    env:
+      DATABASE_URL: "file:./prisma/e2e.db"
+      AUTH_SECRET: "e2e-ci-secret-at-least-32-characters"
+      CI: "true"
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
@@ -56,13 +60,14 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Generate Prisma client
         run: pnpm exec prisma generate
-        env:
-          DATABASE_URL: "file:./prisma/e2e.db"
+      - name: Push Prisma schema
+        run: pnpm exec prisma db push --skip-generate --accept-data-loss
+      - name: Seed
+        run: pnpm db:seed
+      - name: Build
+        run: pnpm build
       - name: Run Playwright
         run: pnpm test:e2e
-        env:
-          CI: "true"
-          AUTH_SECRET: e2e-ci-secret-at-least-32-characters
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

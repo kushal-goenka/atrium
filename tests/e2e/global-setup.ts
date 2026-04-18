@@ -3,46 +3,50 @@ import { unlinkSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
- * Runs once before the e2e suite starts:
- * 1. Removes the previous e2e database (for a clean slate)
- * 2. Pushes the Prisma schema to the e2e database
- * 3. Seeds the built-in sources + roles
- * 4. Builds the Next app so `next start` can serve it
+ * Runs once before the e2e suite starts.
+ *
+ * Local dev: fresh DB, schema push, seed, build. Zero-setup from a dev's POV.
+ *
+ * CI: skips each step if a marker indicates it's already done. CI runs these
+ * explicitly before `pnpm test:e2e` to avoid the Playwright webServer racing
+ * the build (webServer can start in parallel with globalSetup).
  */
 export default async function globalSetup() {
   const dbPath = resolve(__dirname, "../../prisma/e2e.db");
-  if (existsSync(dbPath)) {
-    unlinkSync(dbPath);
-  }
+  const buildMarker = resolve(__dirname, "../../.next/BUILD_ID");
 
   const env = {
     ...process.env,
     DATABASE_URL: "file:./prisma/e2e.db",
+    AUTH_SECRET:
+      process.env.AUTH_SECRET ?? "e2e-secret-at-least-32-characters-long",
   };
 
-  const push = spawnSync(
-    "pnpm",
-    ["exec", "prisma", "db", "push", "--skip-generate", "--accept-data-loss"],
-    { stdio: "inherit", env },
-  );
-  if (push.status !== 0) throw new Error("prisma db push failed");
+  if (!process.env.CI) {
+    if (existsSync(dbPath)) unlinkSync(dbPath);
 
-  const seed = spawnSync("pnpm", ["exec", "tsx", "prisma/seed.ts"], {
-    stdio: "inherit",
-    env,
-  });
-  if (seed.status !== 0) throw new Error("db:seed failed");
+    ensure(
+      spawnSync("pnpm", ["exec", "prisma", "db", "push", "--skip-generate", "--accept-data-loss"], {
+        stdio: "inherit",
+        env,
+      }),
+      "prisma db push",
+    );
 
-  const build = spawnSync(
-    "pnpm",
-    ["exec", "next", "build"],
-    {
-      stdio: "inherit",
-      env: {
-        ...env,
-        AUTH_SECRET: "e2e-secret-at-least-32-characters-long",
-      },
-    },
-  );
-  if (build.status !== 0) throw new Error("next build failed");
+    ensure(
+      spawnSync("pnpm", ["exec", "tsx", "prisma/seed.ts"], { stdio: "inherit", env }),
+      "seed",
+    );
+  }
+
+  if (!existsSync(buildMarker)) {
+    ensure(
+      spawnSync("pnpm", ["exec", "next", "build"], { stdio: "inherit", env }),
+      "next build",
+    );
+  }
+}
+
+function ensure(result: { status: number | null }, label: string) {
+  if (result.status !== 0) throw new Error(`${label} failed (exit ${result.status})`);
 }
