@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" fill="none" aria-label="atrium">
+  <path
+    d="M10 54V28a22 22 0 0 1 44 0v26"
+    stroke="currentColor"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+  <circle cx="22" cy="46" r="3" fill="currentColor" />
+  <circle cx="32" cy="46" r="3" fill="currentColor" />
+  <circle cx="42" cy="46" r="3" fill="currentColor" />
+  <text
+    x="76"
+    y="47"
+    font-family="ui-sans-serif, system-ui, -apple-system, 'Inter', sans-serif"
+    font-weight="600"
+    font-size="30"
+    letter-spacing="-0.02em"
+    fill="currentColor"
+  >atrium</text>
+</svg>

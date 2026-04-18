@@ -1,0 +1,220 @@
+// atrium database schema
+// Portable between SQLite (dev) and Postgres (prod). Enum-ish fields are stored
+// as String to keep the schema cross-provider; values are enforced in TS.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// ---------- identity ----------
+
+model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  name           String?
+  avatarUrl      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  lastSeenAt     DateTime?
+
+  roles          UserRole[]
+  installs       Install[]
+  auditEvents    AuditLog[]    @relation("actor")
+  apiTokens      ApiToken[]
+}
+
+model Role {
+  id          String     @id @default(cuid())
+  // Built-in: viewer, installer, curator, admin. Custom roles allowed.
+  key         String     @unique
+  name        String
+  description String?
+  builtIn     Boolean    @default(false)
+
+  users       UserRole[]
+  policies    Policy[]
+}
+
+model UserRole {
+  userId    String
+  roleId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  grantedAt DateTime @default(now())
+
+  @@id([userId, roleId])
+}
+
+model ApiToken {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  name        String
+  scopes      String
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+}
+
+/// ---------- catalog ----------
+
+/// Source.kind: "GIT" | "HTTP" | "LOCAL"
+/// Source.trust: "OFFICIAL" | "VERIFIED" | "COMMUNITY" | "INTERNAL"
+model Source {
+  id             String      @id @default(cuid())
+  key            String      @unique
+  name           String
+  kind           String
+  url            String?
+  trust          String      @default("community")
+  minSyncSec     Int         @default(3600)
+  autoQuarantine Boolean     @default(true)
+  enabled        Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  snapshots      MarketplaceSnapshot[]
+  plugins        Plugin[]
+}
+
+model MarketplaceSnapshot {
+  id          String   @id @default(cuid())
+  sourceId    String
+  source      Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  fetchedAt   DateTime @default(now())
+  contentHash String
+  manifest    String
+  error       String?
+
+  @@unique([sourceId, contentHash])
+  @@index([sourceId, fetchedAt])
+}
+
+/// Plugin.policyState: "APPROVED" | "QUARANTINED" | "BLOCKED" | "DEPRECATED"
+model Plugin {
+  id           String           @id @default(cuid())
+  sourceId     String
+  source       Source           @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  slug         String
+  name         String
+  category     String
+  description  String
+  authorName   String?
+  authorEmail  String?
+  homepage     String?
+  license      String?
+  keywords     String
+  policyState  String           @default("quarantined")
+  updatedAt    DateTime         @updatedAt
+  createdAt    DateTime         @default(now())
+
+  versions     PluginVersion[]
+  installs     Install[]
+  signals      SecuritySignal[]
+  usage        UsageDaily[]
+
+  @@unique([sourceId, slug])
+  @@index([policyState])
+}
+
+model PluginVersion {
+  id          String   @id @default(cuid())
+  pluginId    String
+  plugin      Plugin   @relation(fields: [pluginId], references: [id], onDelete: Cascade)
+  version     String
+  releasedAt  DateTime @default(now())
+  changelog   String?
+  manifest    String
+  artifactRef String?
+
+  @@unique([pluginId, version])
+  @@index([pluginId, releasedAt])
+}
+
+/// ---------- security ----------
+
+/// SecuritySignal.severity: "INFO" | "LOW" | "MEDIUM" | "HIGH"
+model SecuritySignal {
+  id         String    @id @default(cuid())
+  pluginId   String
+  plugin     Plugin    @relation(fields: [pluginId], references: [id], onDelete: Cascade)
+  scanner    String
+  severity   String
+  title      String
+  detail     String
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+  resolvedBy String?
+
+  @@index([pluginId, severity])
+}
+
+/// ---------- policy ----------
+
+/// Policy.effect: "ALLOW" | "DENY" | "QUARANTINE"
+model Policy {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  roleId      String?
+  role        Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  matcher     String
+  effect      String
+  priority    Int      @default(100)
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+/// ---------- audit + usage ----------
+
+model Install {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  pluginId   String
+  plugin     Plugin   @relation(fields: [pluginId], references: [id], onDelete: Cascade)
+  version    String
+  clientType String?
+  clientIp   String?
+  issuedAt   DateTime @default(now())
+
+  @@index([pluginId, issuedAt])
+  @@index([userId, issuedAt])
+}
+
+model UsageDaily {
+  id          String   @id @default(cuid())
+  pluginId    String
+  plugin      Plugin   @relation(fields: [pluginId], references: [id], onDelete: Cascade)
+  day         DateTime
+  installs    Int      @default(0)
+  commands    Int      @default(0)
+  activeUsers Int      @default(0)
+
+  @@unique([pluginId, day])
+}
+
+/// AuditLog.action: see AUDIT_ACTIONS in lib/types.ts
+model AuditLog {
+  id         String   @id @default(cuid())
+  at         DateTime @default(now())
+  actorId    String?
+  actor      User?    @relation("actor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorKind  String?
+  action     String
+  targetKind String
+  targetId   String?
+  detail     String
+  meta       String?
+
+  @@index([at])
+  @@index([targetKind, targetId])
+}

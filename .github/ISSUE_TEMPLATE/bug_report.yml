@@ -1,0 +1,64 @@
+name: Bug report
+description: Something in Atrium is broken or behaves unexpectedly.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report. The more precise your repro steps,
+        the faster we can fix it. For **security issues**, please do *not* open
+        a public issue — see [SECURITY.md](../../SECURITY.md) instead.
+  - type: input
+    id: version
+    attributes:
+      label: Atrium version
+      description: Output of `git describe --tags` in your deployment, or the Docker tag.
+      placeholder: v0.1.0-alpha
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where does it break?
+      options:
+        - Browse UI
+        - Plugin detail
+        - Admin dashboard
+        - Add source flow
+        - Prisma / database
+        - Dev setup (pnpm install, db push, etc.)
+        - Docker / deploy
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: What did you do, in order, that produced the bug?
+      placeholder: |
+        1. Go to /admin
+        2. Click "Add source"
+        3. Fill in … and submit
+        4. Page shows 500
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened?
+      description: Include stack traces, screenshots, network requests where useful.
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Node version, Postgres/SQLite, browser if UI bug.
+      placeholder: macOS 15.4, Node 20.17, SQLite dev, Chrome 135

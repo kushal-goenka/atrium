@@ -1,0 +1,33 @@
+name: Feature request
+description: A change or addition you think would make Atrium better.
+labels: ["proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Big features start here, then move to an RFC. Small polish can just be a PR.
+        See `ROADMAP.md` for scheduled milestones before filing.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Who is affected, when, and how often? Concrete examples help.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: A rough sketch. Not a final design.
+    validations:
+      required: true
+  - type: textarea
+    id: non-proposal
+    attributes:
+      label: What this isn't
+      description: Out-of-scope clarifications. Prevents scope creep in the thread.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other approaches you considered, and why this one.
