@@ -10,9 +10,7 @@ export const metadata: Metadata = {
   description:
     "Self-host your own plugin marketplace. Federate from others. Audit everything. Atrium is an open-source control plane for Claude Code plugins and skills.",
   icons: {
-    icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-    ],
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
   },
   openGraph: {
     title: "atrium",
@@ -21,9 +19,27 @@ export const metadata: Metadata = {
   },
 };
 
+// Resolves the saved theme and applies the .dark class before React hydrates.
+// Keeps the dark default if nothing is saved (matches our alpha design).
+const THEME_INIT_SCRIPT = `
+(() => {
+  try {
+    const saved = localStorage.getItem("atrium:theme") || "dark";
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const dark = saved === "dark" || (saved === "system" && mql.matches);
+    document.documentElement.classList.toggle("dark", dark);
+  } catch {}
+})();
+`.trim();
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    // suppressHydrationWarning lets the theme init script set the .dark class
+    // before React hydrates without React flagging it as a mismatch.
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-dvh antialiased">
         <Nav />
         <main className="mx-auto max-w-[1200px] px-6 py-10">{children}</main>

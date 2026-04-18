@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { plugins } from "@/data/plugins";
 import { Catalog } from "@/components/catalog";
 import { formatRelative } from "@/lib/utils";
@@ -49,7 +50,22 @@ export default async function BrowsePage() {
         </div>
       </section>
 
-      <Catalog plugins={plugins} sources={sources} />
+      <Suspense fallback={<CatalogSkeleton />}>
+        <Catalog plugins={plugins} sources={sources} />
+      </Suspense>
+    </div>
+  );
+}
+
+function CatalogSkeleton() {
+  return (
+    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-[180px] animate-pulse rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)]"
+        />
+      ))}
     </div>
   );
 }

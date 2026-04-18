@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "./logo";
+import { ThemeToggle } from "./theme-toggle";
 import { getBranding } from "@/lib/branding";
 
 export function Nav() {
@@ -52,10 +53,8 @@ export function Nav() {
           </Link>
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
-          <kbd className="hidden select-none items-center gap-1.5 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-2 py-1 font-mono text-[11px] text-[color:var(--color-fg-subtle)] sm:inline-flex">
-            <span className="text-[13px]">⌘</span>K
-          </kbd>
+        <div className="ml-auto flex items-center gap-3">
+          <ThemeToggle />
           <a
             href="https://github.com/kushal-goenka/atrium#readme"
             className="hidden text-[13.5px] font-medium text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg)] sm:inline"
