@@ -4,7 +4,7 @@
 
 <p align="center">
   <b>The open plugin registry for AI agents.</b><br>
-  Self-host your own. Federate from others. Audit everything.
+  Any provider. Any framework. Self-host your own. Federate from others. Audit everything.
 </p>
 
 <p align="center">
@@ -16,9 +16,9 @@
 
 ---
 
-Anthropic shipped an excellent plugin primitive for Claude Code. It's incomplete for enterprises: no private mirror, no federation policy, no observability, no governance. Atrium is the thin, neutral control plane that fills the gap — **LiteLLM for plugin marketplaces**.
+AI agents are going plural — Claude Code, ChatGPT/Assistants, Gemini extensions, MCP servers, custom frameworks. Each ships its own plugin/extension format, and every enterprise is rediscovering the same problems privately: no unified catalog, no governance, no observability, no white-label story.
 
-Point your team at one URL. Get a beautiful catalog, one-click install snippets, federation from public marketplaces, SSO, RBAC, and OpenTelemetry metrics.
+Atrium is the thin, neutral control plane — **LiteLLM for plugin marketplaces**. Run one instance, get a polished catalog across providers, with federation, version pinning, AI-assisted curation, encrypted LLM key vault, pin-and-fork workflows, and OpenTelemetry out of the box.
 
 ## Screenshots
 
@@ -61,14 +61,30 @@ Point your team at one URL. Get a beautiful catalog, one-click install snippets,
 
 ## Why Atrium
 
-| What enterprises need | What Anthropic's reference marketplace gives | What Atrium adds |
+| What enterprises need | What individual provider stores give | What Atrium adds |
 |---|---|---|
-| A private mirror of approved plugins | Public catalog only | Self-hosted + federated, internal plugins live here |
+| One catalog across providers | Fragmented per vendor | Claude Code, OpenAI, Gemini, MCP, generic — same browse, same policy |
+| A private mirror of approved plugins | Public catalog only | Self-hosted + federated; internal plugins live here |
 | Policy on what devs can install | Anyone can add any URL | Role-aware allow-list, quarantine-by-default, CVE gating |
+| Own LLM keys + proxy | N/A | Encrypted vault (AES-256-GCM); point at a LiteLLM proxy or direct |
+| Automatic catalog hygiene | N/A | AI suggests category + tags using your own LLM keys |
+| Version pinning | Upstream-only | Pin any plugin to a specific version; upstream drift never affects users |
+| Fork-and-modify workflow | N/A | Snapshot an external plugin, distribute your own modified copy |
 | Observability on plugin usage | None | OpenTelemetry traces + per-plugin install / command metrics |
-| A human discovery UX | CLI text list | Searchable catalog with trust tiers, security signals, usage stats |
-| White-labelled for your org | Anthropic-branded | `ATRIUM_ORG_*` env vars theme the whole UI |
+| White-label for your org | Vendor-branded | `ATRIUM_ORG_*` env vars theme the whole UI |
 | Compliance story | None | Immutable audit log, SBOM, signed releases, documented threat model |
+
+## Supported providers
+
+| Provider | Format | Atrium can ingest | Atrium can serve |
+|---|---|---|---|
+| **Claude Code** | `.claude-plugin/marketplace.json` | ✅ git / http | ✅ `/mkt/marketplace.json` |
+| **MCP** | `mcpServers[]` fragments | ✅ as part of any plugin | ✅ surfaced in plugin detail |
+| **OpenAI** | GPT / Custom GPT / Assistants Actions | ✅ directory URL | ✅ plugin detail + search |
+| **Gemini** | Gemini extensions | ✅ git / http | ✅ plugin detail + search |
+| **Generic** | Your custom agent framework | ✅ via HTTP source | ✅ plugin detail + search |
+
+New providers are thin adapters in `lib/ingest/` + optional render extensions to the plugin detail page.
 
 ## Quickstart (dev)
 
@@ -81,7 +97,7 @@ pnpm db:push
 pnpm dev
 ```
 
-Open http://localhost:3000. A seeded catalog of ten realistic plugins across three trust tiers loads automatically.
+Open [http://localhost:3000](http://localhost:3000). A seeded catalog of 12 plugins across 4 providers and 4 trust tiers loads automatically.
 
 ## Quickstart (Docker)
 
@@ -100,23 +116,41 @@ Once Atrium is running, point Claude Code at it:
 /plugin install incident-commander@2.3.1
 ```
 
-Atrium serves Anthropic's `.claude-plugin/marketplace.json` format unchanged. Anything that works in the public marketplace works here.
+Atrium serves Anthropic's `.claude-plugin/marketplace.json` format unchanged. Version pins, hidden flags, and category overrides are honored automatically.
+
+## AI curation & LLM key vault
+
+Under Admin → LLM providers you can register API keys for Anthropic, OpenAI, Azure OpenAI, Gemini, or a LiteLLM proxy. Keys are encrypted at rest with AES-256-GCM using a key derived from `AUTH_SECRET`; only the last four characters are ever shown.
+
+Once at least one provider is configured, every plugin detail page gets a **Curation** panel: click **Suggest** to ask the configured LLM for a category and 3-6 tags, edit if desired, and **Apply override** to persist. The catalog immediately reflects the new metadata.
+
+## Version pinning & forking
+
+On any plugin, admins can:
+
+- **Pin** to a specific version — `/mkt/marketplace.json` serves that version regardless of upstream drift. Unpin to resume tracking upstream.
+- **Fork** an external plugin into your internal source. Atrium snapshots the upstream manifest at fork time and writes a `PluginFork` record you can diverge from independently. Upstream changes never overwrite a fork.
+
+The combination gives orgs full control over third-party code they redistribute: subscribe to any public marketplace, review, modify, pin, and serve your curated version.
 
 ## Features shipped in the alpha
 
-- **Browse** — faceted catalog with category chips, trust-tier filter, per-plugin usage, and review flags for plugins with security signals.
-- **Plugin detail** — full Anthropic manifest rendered (commands, subagents, skills, hooks, MCP servers), one-click install snippet, sticky sidebar with usage metrics, provenance, and a live security-signals panel.
-- **Federation** — ingest from git repos, HTTP URLs, or local uploads; three-tier trust model (`official` / `verified` / `community` / `internal`); quarantine-by-default for new plugins.
-- **Admin dashboard** — operational stats, approvals queue, source health, immutable audit log, high-severity signals panel.
-- **Add source** — server-validated form + Prisma-backed persistence; new sources appear immediately in the catalog.
-- **White-label theming** — `ATRIUM_ORG_NAME`, `ATRIUM_ORG_SHORT_NAME`, `ATRIUM_ORG_LOGO_URL`, `ATRIUM_ORG_URL`, `ATRIUM_SUPPORT_EMAIL`, `ATRIUM_PROPOSAL_URL`, `ATRIUM_ACCENT_HEX`. Theme without touching code.
+- **Browse** — faceted catalog with category chips, provider filter, trust-tier filter, per-plugin usage, and review flags for plugins with security signals.
+- **Plugin detail** — full manifest for the relevant provider (Claude commands/agents/skills/hooks/MCP, OpenAI actions, Gemini extensions), one-click install snippet, sticky sidebar with usage metrics, provenance, security signals, curation + distribution panels.
+- **Federation** — ingest from git repos, HTTP URLs, or local uploads; four-tier trust model (`official` / `verified` / `community` / `internal`); quarantine-by-default for new plugins.
+- **Admin dashboard** — operational stats, approvals queue, source health, immutable audit log, high-severity signals panel. LLM providers + Forks tabs.
+- **AI curation engine** — one-click category + tag suggestions for uncurated plugins. Persists as `PluginOverride` rows that rehydrate the catalog.
+- **Version pinning + forking** — pin any plugin; fork external plugins into your internal source with upstream snapshot preserved.
+- **LLM provider vault** — AES-256-GCM encrypted API keys, baseUrl-aware for LiteLLM-style proxies, Test button for round-trip verification.
+- **Add source** — server-validated form + Prisma-backed persistence; new sources appear immediately.
+- **White-label theming** — `ATRIUM_ORG_NAME`, `ATRIUM_ORG_SHORT_NAME`, `ATRIUM_ORG_LOGO_URL`, `ATRIUM_ORG_URL`, `ATRIUM_SUPPORT_EMAIL`, `ATRIUM_PROPOSAL_URL`, `ATRIUM_ACCENT_HEX`.
 - **Users** — role table (admin / curator / installer / viewer). SSO-backed invitations land in M2.
 
 ## What's coming next
 
 See [`ROADMAP.md`](ROADMAP.md). The headline items:
 
-- **M1** — real ingestion from git sources + Anthropic-compatible serving endpoints
+- **M1** — complete plugin-table migration + real ingestion at scale
 - **M2** — OIDC/SAML, four-eyes approval, full RBAC
 - **M3** — OpenTelemetry end-to-end, admin metrics page
 - **M4** — policy engine, scanners, CVE gating, notifications
@@ -125,14 +159,27 @@ See [`ROADMAP.md`](ROADMAP.md). The headline items:
 ## Architecture at a glance
 
 ```
-Claude Code ──▶ Atrium (Next.js + Prisma + Postgres)
-                 ├── Browse / detail UI (SSR)
-                 ├── /mkt/marketplace.json  (Anthropic-compatible)
-                 ├── /mkt/plugins/…tar.gz   (policy-filtered artifacts)
-                 ├── Admin UI (sources, plugins, users, policies, audit)
-                 └── OTEL exporter  ──▶ your collector
-                            ▲
-          federated sources (git / http / other atriums)
+Claude Code / ChatGPT / Gemini / custom agent
+                 │
+                 ▼
+         Atrium (Next.js + Prisma)
+                 │
+   ┌─────────────┼────────────────────────────┐
+   │             │                            │
+   │   ┌─────────▼────────┐   ┌───────────────▼───────────┐
+   │   │ /mkt/marketplace │   │ Admin UI                   │
+   │   │ .json (Claude)   │   │  sources, plugins, users,  │
+   │   │ + provider APIs  │   │  policies, LLM providers,  │
+   │   │ (OpenAI, Gemini) │   │  forks, audit log          │
+   │   └──────────────────┘   └────────────────────────────┘
+   │
+   ├──▶ Postgres / SQLite (sources, plugins, overrides, forks,
+   │                       audit log, provider configs,
+   │                       curation suggestions)
+   │
+   └──▶ OTEL → your collector
+                 ▲
+   federated sources (git / http / other atriums / GPT Store)
 ```
 
 Deep dive: [`ARCHITECTURE.md`](ARCHITECTURE.md).
@@ -157,19 +204,25 @@ Next.js 15 (App Router, Server Components) · React 19 · Tailwind v4 · Prisma 
 ## Testing
 
 ```bash
-pnpm test          # unit (vitest) — 56 tests
-pnpm test:e2e      # end-to-end (playwright) — 21 tests
+pnpm test          # unit (vitest) — 66 tests
+pnpm test:e2e      # end-to-end (playwright) — 23+ tests
 pnpm typecheck     # strict TypeScript
 pnpm build         # production build verification
 ```
 
-- **Unit** covers `lib/utils`, `lib/branding`, `lib/sources`, `lib/manifest`, git/http ingest adapters (mocked `fetch` + URL-validation cases), and Server Action validation paths (mocked `next/cache` + `next/navigation`).
-- **E2E** covers browse/filter/search, category + source narrowing, plugin detail manifest rendering, install snippet, flag-for-rescan, admin stats, approve flow, add-source end-to-end, users page, `/mkt/marketplace.json` contract, theme persistence, URL-filter round-trip.
+- **Unit** covers `lib/utils`, `lib/branding`, `lib/sources`, `lib/manifest`, `lib/crypto` (AES-GCM round-trip + tamper detection), git/http ingest adapters (mocked `fetch` + URL-validation cases), and Server Action validation paths.
+- **E2E** covers browse/filter/search, category + source + provider narrowing, plugin detail manifest rendering, install snippet, flag-for-rescan, admin stats, approve flow, add-source end-to-end, users page, `/mkt/marketplace.json` contract, `/api/health`, theme persistence, URL-filter round-trip.
 - **CI** (GitHub Actions) runs typecheck + unit + build in one job, then e2e in a separate job gated behind them, uploading the Playwright report on failure.
 
 ## Contributing
 
-PRs welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md). Especially looking for help on source adapters (Artifactory, Nexus, S3), scanners (new static checks), auth providers, translations, and runbooks.
+PRs welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md). Especially looking for help on:
+
+- New source adapters (Artifactory, Nexus, S3)
+- Provider adapters (Azure AI Studio, Vertex AI, Bedrock)
+- Scanners (new static checks)
+- Auth providers
+- Translations
 
 Security? Report privately via GitHub Security Advisories — not a public issue. Details in [`SECURITY.md`](SECURITY.md).
 
