@@ -8,12 +8,13 @@ import { ApprovalActions } from "@/components/approval-actions";
 export const dynamic = "force-dynamic";
 
 const auditLog = [
-  { at: "2026-04-17T08:12:00Z", actor: "ingest", action: "sync", target: "Acme Corp internal", detail: "2 plugins updated" },
-  { at: "2026-04-17T07:44:00Z", actor: "alice@acme.corp", action: "install", target: "incident-commander@2.3.1", detail: "via Claude Code" },
-  { at: "2026-04-17T06:02:00Z", actor: "ingest", action: "sync", target: "Anthropic reference", detail: "no changes" },
-  { at: "2026-04-16T22:18:00Z", actor: "jordan@acme.corp", action: "approve", target: "spark-etl@0.2.0", detail: "promoted from quarantine" },
-  { at: "2026-04-16T17:40:00Z", actor: "scanner", action: "signal", target: "k8s-operator@1.5.2", detail: "high: kubectl shell access" },
-  { at: "2026-04-16T12:08:00Z", actor: "jordan@acme.corp", action: "quarantine", target: "k8s-operator@1.5.2", detail: "pending security review" },
+  { at: "2026-04-18T02:12:00Z", actor: "ingest", action: "sync", target: "Acme Corp internal", detail: "2 plugins updated" },
+  { at: "2026-04-18T01:44:00Z", actor: "alice@acme.corp", action: "install", target: "pr-reviewer-gpt@3.1.0", detail: "via ChatGPT" },
+  { at: "2026-04-18T00:30:00Z", actor: "curator-ai", action: "suggest", target: "meeting-notes@0.9.0", detail: "category → productivity, 5 tags" },
+  { at: "2026-04-17T22:02:00Z", actor: "ingest", action: "sync", target: "OpenAI GPT directory", detail: "no changes" },
+  { at: "2026-04-17T18:18:00Z", actor: "jordan@acme.corp", action: "approve", target: "spark-etl@0.2.0", detail: "promoted from quarantine" },
+  { at: "2026-04-17T17:40:00Z", actor: "scanner", action: "signal", target: "k8s-operator@1.5.2", detail: "high: kubectl shell access" },
+  { at: "2026-04-17T12:08:00Z", actor: "jordan@acme.corp", action: "quarantine", target: "k8s-operator@1.5.2", detail: "pending security review" },
 ];
 
 export default async function AdminDashboard() {
@@ -36,7 +37,19 @@ export default async function AdminDashboard() {
             <span className="font-mono">{formatRelative("2026-04-17T08:12:00Z")}</span>.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/providers"
+            className="inline-flex h-9 items-center rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-3 text-[13px] font-medium hover:border-[color:var(--color-border-strong)]"
+          >
+            LLM providers
+          </Link>
+          <Link
+            href="/admin/forks"
+            className="inline-flex h-9 items-center rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-3 text-[13px] font-medium hover:border-[color:var(--color-border-strong)]"
+          >
+            Forks
+          </Link>
           <Link
             href="/admin/sources/new"
             className="inline-flex h-9 items-center rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-3 text-[13px] font-medium hover:border-[color:var(--color-border-strong)]"

@@ -5,9 +5,15 @@ import { findPlugin, findSource, plugins } from "@/data/plugins";
 import { Badge } from "@/components/badge";
 import { CopyCommand } from "@/components/copy-command";
 import { FlagForRescan } from "@/components/flag-for-rescan";
+import { CurationPanel } from "@/components/curation-panel";
+import { PinForkPanel } from "@/components/pin-fork-panel";
 import { formatNumber, formatRelative } from "@/lib/utils";
 import { getBranding } from "@/lib/branding";
-import type { SecuritySignal } from "@/lib/types";
+import { hydratePlugins } from "@/lib/overrides";
+import { PROVIDER_LABELS, type SecuritySignal } from "@/lib/types";
+
+// Reads from DB to hydrate overrides.
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return plugins.map((p) => ({ slug: p.slug }));
@@ -36,7 +42,9 @@ export default async function PluginDetail(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const plugin = findPlugin(slug);
+  const staticPlugin = findPlugin(slug);
+  if (!staticPlugin) return notFound();
+  const [plugin] = await hydratePlugins([staticPlugin]);
   if (!plugin) return notFound();
   const source = findSource(plugin.sourceId);
   const brand = getBranding();
@@ -65,11 +73,20 @@ export default async function PluginDetail(
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="accent">{plugin.category}</Badge>
+            <Badge>{PROVIDER_LABELS[plugin.provider]}</Badge>
             {source ? <Badge>{trustLabel}</Badge> : null}
             {plugin.policyState === "quarantined" ? (
               <Badge variant="warn">Quarantined</Badge>
             ) : null}
             {plugin.policyState === "blocked" ? <Badge variant="danger">Blocked</Badge> : null}
+            {plugin.pinnedVersion ? (
+              <Badge variant="info">Pinned · v{plugin.pinnedVersion}</Badge>
+            ) : null}
+            {plugin.forkedFrom ? (
+              <Badge variant="info">
+                Fork of {plugin.forkedFrom.slug}@{plugin.forkedFrom.atVersion}
+              </Badge>
+            ) : null}
           </div>
           <h1 className="mt-3 text-[30px] font-semibold tracking-tight text-[color:var(--color-fg)]">
             {plugin.name}
@@ -217,6 +234,60 @@ export default async function PluginDetail(
             </Section>
           ) : null}
 
+          {plugin.actions && plugin.actions.length > 0 ? (
+            <Section title="OpenAI actions" count={plugin.actions.length}>
+              <ul className="divide-y divide-[color:var(--color-border)]">
+                {plugin.actions.map((a) => (
+                  <li key={a.name} className="py-3">
+                    <div className="flex items-center gap-2">
+                      <code className="font-mono text-[13px] text-[color:var(--color-fg)]">
+                        {a.name}
+                      </code>
+                      {a.scope ? (
+                        <Badge variant={a.scope === "write" ? "warn" : "neutral"}>
+                          {a.scope}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-[13px] leading-relaxed text-[color:var(--color-fg-muted)]">
+                      {a.description}
+                    </p>
+                    {a.schemaUrl ? (
+                      <a
+                        href={a.schemaUrl}
+                        className="mt-1 block truncate font-mono text-[11.5px] text-[color:var(--color-accent)] hover:underline"
+                      >
+                        {a.schemaUrl.replace(/^https?:\/\//, "")}
+                      </a>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          ) : null}
+
+          {plugin.extensions && plugin.extensions.length > 0 ? (
+            <Section title="Gemini extensions" count={plugin.extensions.length}>
+              <ul className="divide-y divide-[color:var(--color-border)]">
+                {plugin.extensions.map((e) => (
+                  <li key={e.name} className="py-3">
+                    <code className="font-mono text-[13px] text-[color:var(--color-fg)]">
+                      {e.name}
+                    </code>
+                    <p className="mt-1 text-[13px] leading-relaxed text-[color:var(--color-fg-muted)]">
+                      {e.description}
+                    </p>
+                    {e.trigger ? (
+                      <p className="mt-1 text-[11.5px] text-[color:var(--color-fg-subtle)]">
+                        Trigger: <em className="not-italic">{e.trigger}</em>
+                      </p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          ) : null}
+
           {plugin.hooks.length > 0 ? (
             <Section title="Hooks" count={plugin.hooks.length}>
               <ul className="divide-y divide-[color:var(--color-border)]">
@@ -318,6 +389,20 @@ export default async function PluginDetail(
               ) : null}
             </div>
           ) : null}
+
+          <CurationPanel
+            pluginSlug={plugin.slug}
+            currentCategory={plugin.category}
+            currentKeywords={plugin.keywords}
+          />
+
+          <PinForkPanel
+            pluginSlug={plugin.slug}
+            pluginVersion={plugin.version}
+            versions={plugin.versions.map((v) => ({ version: v.version }))}
+            currentPin={plugin.pinnedVersion}
+            sourceKind={source?.kind ?? "git"}
+          />
 
           <div className="rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] p-5">
             <h2 className="text-[13px] font-semibold tracking-tight text-[color:var(--color-fg)]">

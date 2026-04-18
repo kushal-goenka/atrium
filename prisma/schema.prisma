@@ -218,3 +218,89 @@ model AuditLog {
   @@index([at])
   @@index([targetKind, targetId])
 }
+
+/// ---------- provider keys / LLM routing ----------
+
+/// ProviderConfig stores API keys and base URLs for external LLM providers.
+/// Used by the AI curation engine and any other feature that needs an LLM.
+/// `apiKeyCipher` is AES-256-GCM encrypted; plaintext is never persisted.
+model ProviderConfig {
+  id            String    @id @default(cuid())
+  /// "anthropic" | "openai" | "gemini" | "azure-openai" | "litellm-proxy" | "custom"
+  provider      String    @unique
+  displayName   String
+  /// AES-GCM ciphertext of the API key. See lib/crypto.ts format.
+  apiKeyCipher  String
+  /// Last 4 chars of the plaintext key, shown in UI. Not sensitive.
+  apiKeyTail    String
+  /// Optional base URL override (Azure OpenAI, LiteLLM proxy, custom).
+  baseUrl       String?
+  /// Default model id to use for this provider's requests.
+  defaultModel  String?
+  enabled       Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastUsedAt    DateTime?
+}
+
+/// ---------- plugin overrides (pin / fork / curation) ----------
+
+/// Per-plugin admin overrides. Applied when serving /mkt/marketplace.json.
+model PluginOverride {
+  id              String   @id @default(cuid())
+  /// Composite of sourceKey:pluginSlug so it's unique across sources.
+  pluginKey       String   @unique
+  /// If set, serve only this version regardless of what the source reports.
+  pinnedVersion   String?
+  /// Category override (replaces whatever the source reported).
+  categoryOverride String?
+  /// JSON-encoded string array for keyword/tag override.
+  keywordsOverride String?
+  /// Hidden from serving + browse until cleared.
+  hidden          Boolean  @default(false)
+  /// Free-form note for the audit trail.
+  note            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String?
+}
+
+/// A local fork of an external plugin. The fork lives under an internal
+/// source key; forked plugins can diverge from the upstream independently.
+model PluginFork {
+  id               String   @id @default(cuid())
+  /// slug:sourceKey pair that is the new fork (internal).
+  forkSlug         String
+  forkSourceKey    String
+  /// The upstream we were forked from.
+  upstreamSlug     String
+  upstreamSourceKey String
+  /// Version at the time of fork.
+  forkedAtVersion  String
+  /// JSON-encoded manifest captured at fork time, in case upstream disappears.
+  snapshotManifest String
+  notes            String?
+  createdAt        DateTime @default(now())
+  createdBy        String?
+
+  @@unique([forkSourceKey, forkSlug])
+}
+
+/// AI-generated curation suggestions. Lives alongside the plugin; admin
+/// can accept / edit / reject. Accepted suggestions become PluginOverride rows.
+model CurationSuggestion {
+  id          String    @id @default(cuid())
+  pluginKey   String
+  /// "category" | "keywords"
+  field       String
+  suggested   String
+  /// "anthropic" | "openai" | "gemini" — whichever provider we called.
+  generatedBy String
+  /// Confidence 0..1 if the model returned one; else null.
+  confidence  Float?
+  status      String    @default("pending") // "pending" | "accepted" | "rejected" | "edited"
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  @@index([pluginKey, status])
+}

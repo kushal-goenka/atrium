@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import type { Plugin, PluginCategory, Source } from "@/lib/types";
+import type { Plugin, PluginCategory, PluginProvider, Source } from "@/lib/types";
+import { PROVIDER_LABELS } from "@/lib/types";
 import { PluginCard } from "./plugin-card";
 import { cn } from "@/lib/utils";
 
@@ -43,10 +44,12 @@ export function Catalog({ plugins, sources }: Props) {
   const initialQuery = searchParams.get("q") ?? "";
   const initialCategory = parseCategory(searchParams.get("category"));
   const initialSource = searchParams.get("source") ?? "all";
+  const initialProvider = (searchParams.get("provider") ?? "all") as "all" | PluginProvider;
 
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState<Filter>(initialCategory);
   const [sourceId, setSourceId] = useState<string | "all">(initialSource);
+  const [provider, setProvider] = useState<"all" | PluginProvider>(initialProvider);
 
   // Debounced URL sync: write the current filter state to the URL ~250ms after
   // the user stops typing. Avoids a navigation on every keystroke.
@@ -56,6 +59,7 @@ export function Catalog({ plugins, sources }: Props) {
       if (query) next.set("q", query);
       if (category !== "all") next.set("category", category);
       if (sourceId !== "all") next.set("source", sourceId);
+      if (provider !== "all") next.set("provider", provider);
       const search = next.toString();
       const href = search ? `${pathname}?${search}` : pathname;
       startTransition(() => router.replace(href, { scroll: false }));
@@ -63,11 +67,17 @@ export function Catalog({ plugins, sources }: Props) {
     return () => clearTimeout(t);
     // Don't depend on router/pathname — they're stable across renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, category, sourceId]);
+  }, [query, category, sourceId, provider]);
 
   const categories = useMemo<Filter[]>(() => {
     const set = new Set<Filter>(["all"]);
     plugins.forEach((p) => set.add(p.category));
+    return Array.from(set);
+  }, [plugins]);
+
+  const availableProviders = useMemo<PluginProvider[]>(() => {
+    const set = new Set<PluginProvider>();
+    plugins.forEach((p) => set.add(p.provider));
     return Array.from(set);
   }, [plugins]);
 
@@ -76,6 +86,7 @@ export function Catalog({ plugins, sources }: Props) {
     return plugins.filter((p) => {
       if (category !== "all" && p.category !== category) return false;
       if (sourceId !== "all" && p.sourceId !== sourceId) return false;
+      if (provider !== "all" && p.provider !== provider) return false;
       if (!q) return true;
       return (
         p.name.toLowerCase().includes(q) ||
@@ -85,7 +96,7 @@ export function Catalog({ plugins, sources }: Props) {
         p.commands.some((c) => c.name.toLowerCase().includes(q))
       );
     });
-  }, [plugins, query, category, sourceId]);
+  }, [plugins, query, category, sourceId, provider]);
 
   const sourceMap = useMemo(() => new Map(sources.map((s) => [s.id, s])), [sources]);
 
@@ -93,9 +104,11 @@ export function Catalog({ plugins, sources }: Props) {
     setQuery("");
     setCategory("all");
     setSourceId("all");
+    setProvider("all");
   }
 
-  const hasActiveFilters = query !== "" || category !== "all" || sourceId !== "all";
+  const hasActiveFilters =
+    query !== "" || category !== "all" || sourceId !== "all" || provider !== "all";
 
   return (
     <div>
@@ -140,26 +153,51 @@ export function Catalog({ plugins, sources }: Props) {
               {categoryLabels[c]}
             </button>
           ))}
-          <div className="ml-auto flex items-center gap-2">
-            <label
-              htmlFor="source-filter"
-              className="text-[12px] text-[color:var(--color-fg-subtle)]"
-            >
-              Source
-            </label>
-            <select
-              id="source-filter"
-              value={sourceId}
-              onChange={(e) => setSourceId(e.target.value as typeof sourceId)}
-              className="h-8 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-2 text-[12.5px] text-[color:var(--color-fg-muted)] focus:border-[color:var(--color-border-strong)] focus:outline-none"
-            >
-              <option value="all">All sources</option>
-              {sources.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+          <div className="ml-auto flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="provider-filter"
+                className="text-[12px] text-[color:var(--color-fg-subtle)]"
+              >
+                Provider
+              </label>
+              <select
+                id="provider-filter"
+                name="provider"
+                value={provider}
+                onChange={(e) => setProvider(e.target.value as typeof provider)}
+                className="h-8 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-2 text-[12.5px] text-[color:var(--color-fg-muted)] focus:border-[color:var(--color-border-strong)] focus:outline-none"
+              >
+                <option value="all">All providers</option>
+                {availableProviders.map((p) => (
+                  <option key={p} value={p}>
+                    {PROVIDER_LABELS[p]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="source-filter"
+                className="text-[12px] text-[color:var(--color-fg-subtle)]"
+              >
+                Source
+              </label>
+              <select
+                id="source-filter"
+                name="source"
+                value={sourceId}
+                onChange={(e) => setSourceId(e.target.value as typeof sourceId)}
+                className="h-8 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-2 text-[12.5px] text-[color:var(--color-fg-muted)] focus:border-[color:var(--color-border-strong)] focus:outline-none"
+              >
+                <option value="all">All sources</option>
+                {sources.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>

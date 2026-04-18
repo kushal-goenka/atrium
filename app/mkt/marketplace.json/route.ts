@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { plugins } from "@/data/plugins";
+import { plugins as staticPlugins } from "@/data/plugins";
 import { getBranding } from "@/lib/branding";
+import { hydratePlugins } from "@/lib/overrides";
 
 export const runtime = "nodejs";
-export const revalidate = 60; // re-aggregate at most once per minute
+export const dynamic = "force-dynamic";
 
 /**
  * Anthropic-compatible marketplace.json endpoint.
@@ -14,13 +15,19 @@ export const revalidate = 60; // re-aggregate at most once per minute
  * The response aggregates every plugin across all federated sources that
  * matches the current policy (approved + not blocked for the caller's role).
  *
- * In the alpha, policy is "only approved plugins for anyone"; M2 adds
- * role-aware filtering and per-caller trust decisions.
+ * Pinned versions: if an admin has pinned a plugin, we serve the pinned
+ * version string — upstream drift does not affect what's served.
  */
 export async function GET() {
   const brand = getBranding();
+  const plugins = await hydratePlugins(staticPlugins);
 
-  const approved = plugins.filter((p) => p.policyState === "approved");
+  // Only Claude Code-compatible plugins (commands/agents/skills/hooks/mcp) go in
+  // this endpoint's output; OpenAI/Gemini plugins are fetched by their own
+  // clients. This keeps the manifest Anthropic-conformant.
+  const approved = plugins.filter(
+    (p) => p.policyState === "approved" && (p.provider === "claude-code" || p.provider === "mcp"),
+  );
 
   const body = {
     name: `atrium@${brand.atriumHostname}`,
@@ -29,7 +36,7 @@ export async function GET() {
       name: p.slug,
       source: p.homepage ?? `./plugins/${p.slug}`,
       description: p.description,
-      version: p.version,
+      version: p.pinnedVersion ?? p.version,
       category: p.category,
       author: p.author,
       keywords: p.keywords,
@@ -40,7 +47,6 @@ export async function GET() {
 
   return NextResponse.json(body, {
     headers: {
-      // Advertise the atrium origin so Claude Code can tell clones apart.
       "x-atrium-host": brand.atriumHostname,
       "cache-control": "public, max-age=60, stale-while-revalidate=300",
     },

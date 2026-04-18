@@ -1,16 +1,20 @@
 import { Suspense } from "react";
-import { plugins } from "@/data/plugins";
-
-// Reads from DB (sources) — can't prerender at build.
-export const dynamic = "force-dynamic";
+import { plugins as staticPlugins } from "@/data/plugins";
 import { Catalog } from "@/components/catalog";
 import { formatRelative } from "@/lib/utils";
 import { getBranding } from "@/lib/branding";
 import { listAllSources } from "@/lib/sources";
+import { hydratePlugins } from "@/lib/overrides";
+
+// Reads from DB (sources + overrides) — can't prerender at build.
+export const dynamic = "force-dynamic";
 
 export default async function BrowsePage() {
   const brand = getBranding();
-  const sources = await listAllSources();
+  const [sources, plugins] = await Promise.all([
+    listAllSources(),
+    hydratePlugins(staticPlugins),
+  ]);
 
   const mostRecent = plugins.reduce<string>(
     (acc, p) => (p.updatedAt > acc ? p.updatedAt : acc),
@@ -27,8 +31,9 @@ export default async function BrowsePage() {
           Plugins approved for your org
         </h1>
         <p className="mt-2 max-w-2xl text-[14.5px] leading-relaxed text-[color:var(--color-fg-muted)]">
-          Every plugin here has been reviewed against your organization&apos;s security policy and
-          is available to install from Claude Code.
+          Every plugin here has been reviewed against your organization&apos;s security policy.
+          Install from Claude Code, ChatGPT, Gemini, or any agent framework that speaks the
+          underlying protocol.
           {brand.proposalUrl || brand.supportEmail ? (
             <>
               {" "}Want to propose one?{" "}

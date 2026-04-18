@@ -1,9 +1,24 @@
 /**
- * Plugin manifest types. Strict superset of Anthropic's Claude Code plugin format:
- * https://docs.anthropic.com/claude-code/plugins
+ * Plugin types — deliberately provider-agnostic.
  *
- * Anything atrium adds on top is optional and lives under `atrium:*` namespaces.
+ * Atrium consumes plugins from multiple agent frameworks. Each has its own
+ * manifest shape; we keep a common core (name, version, description, author,
+ * category, tags) and let provider-specific extensions live under `providerManifest`.
+ *
+ * Current providers:
+ *   - "claude-code"  — Anthropic's .claude-plugin/marketplace.json format
+ *   - "openai"       — OpenAI GPT / Custom GPT / Assistants actions
+ *   - "gemini"       — Google Gemini extensions
+ *   - "mcp"          — pure MCP server registrations (provider-neutral)
+ *   - "generic"      — everything else (custom agent frameworks)
  */
+
+export type PluginProvider =
+  | "claude-code"
+  | "openai"
+  | "gemini"
+  | "mcp"
+  | "generic";
 
 export type PluginCategory =
   | "productivity"
@@ -33,7 +48,7 @@ export interface SlashCommand {
 export interface Subagent {
   name: string;
   description: string;
-  model?: "opus" | "sonnet" | "haiku" | "inherit";
+  model?: string;
   tools?: string[];
 }
 
@@ -67,36 +82,61 @@ export interface McpServer {
 }
 
 /**
- * Parsed plugin, fully hydrated with manifest contents. This is what the UI renders from.
+ * OpenAI-flavored "action" — a named tool callable by a GPT or Assistant.
  */
+export interface OpenAiAction {
+  name: string;
+  description: string;
+  /** Schema URL, usually an OpenAPI spec. */
+  schemaUrl?: string;
+  scope?: "read" | "write";
+}
+
+/**
+ * Gemini-flavored "extension" entry.
+ */
+export interface GeminiExtension {
+  name: string;
+  description: string;
+  trigger?: string;
+}
+
 export interface Plugin {
-  /** URL-safe slug, unique within a source. */
   slug: string;
   name: string;
   description: string;
   version: string;
+  /** Which agent framework this plugin targets. */
+  provider: PluginProvider;
   category: PluginCategory;
   author: Author;
   keywords: string[];
   homepage?: string;
   license?: string;
-  /** The source this plugin was ingested from. */
   sourceId: string;
-  /** The full manifest contents. */
+
+  /** Claude Code manifest fragments (only populated for provider === "claude-code"). */
   commands: SlashCommand[];
   agents: Subagent[];
   skills: Skill[];
   hooks: Hook[];
   mcpServers: McpServer[];
-  /** All versions we've observed for this plugin, newest first. */
+
+  /** OpenAI-flavored fragments. */
+  actions?: OpenAiAction[];
+  /** Gemini-flavored fragments. */
+  extensions?: GeminiExtension[];
+
   versions: PluginVersionSummary[];
-  /** Signals produced by our scanners. */
   signals: SecuritySignal[];
-  /** Aggregated install / usage metrics (nullable if telemetry disabled). */
   usage?: UsageSnapshot;
-  /** Policy state in the current viewer's context. */
   policyState: "approved" | "quarantined" | "blocked";
   updatedAt: string;
+
+  /** Override that pins this plugin to a specific version. If set, atrium serves only this version to clients. */
+  pinnedVersion?: string;
+  /** If this plugin was forked from an external source, provenance info. */
+  forkedFrom?: { sourceId: string; slug: string; atVersion: string };
 }
 
 export interface PluginVersionSummary {
@@ -110,7 +150,6 @@ export interface SecuritySignal {
   severity: "info" | "low" | "medium" | "high";
   title: string;
   detail: string;
-  /** Scanner that produced this signal. */
   scanner: string;
 }
 
@@ -118,7 +157,6 @@ export interface UsageSnapshot {
   installs30d: number;
   installsAllTime: number;
   activeUsers7d: number;
-  /** Top commands by invocation count over last 30d. */
   topCommands: { name: string; count: number }[];
 }
 
@@ -131,3 +169,11 @@ export interface Source {
   trust: "official" | "verified" | "community" | "internal";
   pluginCount: number;
 }
+
+export const PROVIDER_LABELS: Record<PluginProvider, string> = {
+  "claude-code": "Claude Code",
+  openai: "OpenAI",
+  gemini: "Gemini",
+  mcp: "MCP",
+  generic: "Generic",
+};

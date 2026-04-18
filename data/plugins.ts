@@ -1,18 +1,27 @@
 import type { Plugin, Source } from "@/lib/types";
 
 /**
- * Seed catalog for development. Replaced by database-backed catalog in M1.
- * All plugins, authors, and usage numbers are fictional, illustrative of a
- * realistic enterprise atrium deployment.
+ * Seed catalog for development.
+ * Fictional plugins spanning Claude Code, OpenAI, Gemini, MCP, and generic
+ * providers — sized to look like a realistic enterprise atrium deployment.
  */
 
 export const sources: Source[] = [
   {
-    id: "anthropic-reference",
+    id: "official-reference",
     kind: "git",
     name: "Anthropic reference marketplace",
     url: "https://github.com/anthropics/claude-code/examples/marketplace",
     lastSyncedAt: "2026-04-17T06:00:00Z",
+    trust: "official",
+    pluginCount: 2,
+  },
+  {
+    id: "openai-store",
+    kind: "http",
+    name: "OpenAI GPT directory",
+    url: "https://chat.openai.com/g/catalog.json",
+    lastSyncedAt: "2026-04-17T04:30:00Z",
     trust: "official",
     pluginCount: 2,
   },
@@ -42,12 +51,13 @@ export const plugins: Plugin[] = [
     description:
       "On-call copilot. Triages alerts, drafts status page updates, assembles a timeline, and runs a postmortem skeleton.",
     version: "2.3.1",
+    provider: "claude-code",
     category: "ops",
     author: { name: "Anthropic", url: "https://anthropic.com" },
     keywords: ["oncall", "sre", "incident", "postmortem"],
     homepage: "https://github.com/anthropics/incident-commander",
     license: "Apache-2.0",
-    sourceId: "anthropic-reference",
+    sourceId: "official-reference",
     commands: [
       { name: "/ic start", description: "Open a new incident with a short title", argumentHint: "<title>" },
       { name: "/ic status", description: "Draft a status page update based on the current context" },
@@ -99,11 +109,12 @@ export const plugins: Plugin[] = [
     description:
       "Pre-deploy safety net. Runs a checklist of production readiness checks before you ship and refuses to continue if any fail.",
     version: "1.8.0",
+    provider: "claude-code",
     category: "devops",
     author: { name: "Anthropic" },
     keywords: ["deploy", "ci", "safety", "release"],
     license: "Apache-2.0",
-    sourceId: "anthropic-reference",
+    sourceId: "official-reference",
     commands: [
       { name: "/deploy check", description: "Run the full preflight checklist" },
       { name: "/deploy rollback", description: "Generate rollback plan for the last deploy" },
@@ -135,40 +146,43 @@ export const plugins: Plugin[] = [
     updatedAt: "2026-04-02T10:00:00Z",
   },
   {
-    slug: "pr-reviewer",
-    name: "PR Reviewer",
+    slug: "pr-reviewer-gpt",
+    name: "PR Reviewer GPT",
     description:
-      "Opinionated code review workflow. Reads the diff, checks for common issues, and leaves a structured review comment on GitHub.",
+      "OpenAI-backed code review GPT. Reads diffs via GitHub action, posts a structured review comment.",
     version: "3.1.0",
+    provider: "openai",
     category: "productivity",
     author: { name: "Sam Crichton", url: "https://github.com/scrichton" },
     keywords: ["review", "github", "diff", "lint"],
     license: "MIT",
-    sourceId: "community-curated",
-    commands: [
-      { name: "/review", description: "Review the current PR" },
-      { name: "/review quick", description: "Fast pass, no suggestions" },
-    ],
-    agents: [
-      { name: "reviewer", description: "Senior staff engineer persona. Focused on structural feedback over nits.", model: "opus" },
-      { name: "nit-catcher", description: "Style and naming nits. Pair with /review when desired.", model: "haiku" },
-    ],
-    skills: [
-      { name: "diff-summarizer", description: "Summarizes a diff in three bullets for the PR description." },
-    ],
+    sourceId: "openai-store",
+    commands: [],
+    agents: [],
+    skills: [],
     hooks: [],
-    mcpServers: [
-      { name: "github", command: "npx", args: ["-y", "@github/mcp-server"], description: "GitHub API access." },
+    mcpServers: [],
+    actions: [
+      {
+        name: "review_pr",
+        description: "Fetches the PR diff and returns a structured review.",
+        schemaUrl: "https://raw.githubusercontent.com/scrichton/pr-reviewer-gpt/main/openapi.yaml",
+        scope: "read",
+      },
+      {
+        name: "comment_on_pr",
+        description: "Posts a review comment on the PR.",
+        scope: "write",
+      },
     ],
     versions: [
-      { version: "3.1.0", releasedAt: "2026-04-09T13:00:00Z", changelog: "Add /review quick for triage." },
-      { version: "3.0.0", releasedAt: "2026-03-20T08:30:00Z", changelog: "Reviewer persona rewrite. Breaking: config keys renamed." },
+      { version: "3.1.0", releasedAt: "2026-04-09T13:00:00Z", changelog: "Add structured scope field to comment action." },
+      { version: "3.0.0", releasedAt: "2026-03-20T08:30:00Z", changelog: "Rewrite using the Assistants API." },
     ],
-    signals: [],
-    usage: { installs30d: 412, installsAllTime: 3201, activeUsers7d: 288, topCommands: [
-      { name: "/review", count: 1892 },
-      { name: "/review quick", count: 440 },
-    ] },
+    signals: [
+      { id: "s2a", severity: "low", title: "Write-scope action", detail: "The comment_on_pr action has write scope. Scope it to specific repos via OpenAI plugin settings.", scanner: "openai-scope" },
+    ],
+    usage: { installs30d: 412, installsAllTime: 3201, activeUsers7d: 288, topCommands: [] },
     policyState: "approved",
     updatedAt: "2026-04-09T13:00:00Z",
   },
@@ -178,6 +192,7 @@ export const plugins: Plugin[] = [
     description:
       "Internal data-team plugin. Query Acme's Snowflake warehouse through a natural-language interface with guardrails on PII tables.",
     version: "0.7.2",
+    provider: "claude-code",
     category: "data",
     author: { name: "Acme Data Platform", email: "data-platform@acme.corp" },
     keywords: ["snowflake", "sql", "analytics", "internal"],
@@ -218,22 +233,17 @@ export const plugins: Plugin[] = [
     slug: "figma-bridge",
     name: "Figma Bridge",
     description:
-      "Read Figma files in Claude Code. Extract components, walk design tokens, and generate React starter code from selected frames.",
+      "Pure MCP server. Read Figma files, extract components, walk design tokens. Works with any MCP-aware agent.",
     version: "1.2.4",
+    provider: "mcp",
     category: "design",
     author: { name: "Priya Chen", url: "https://github.com/priyachen" },
     keywords: ["figma", "design", "tokens", "frontend"],
     license: "MIT",
     sourceId: "community-curated",
-    commands: [
-      { name: "/figma open", description: "Load a Figma file by URL", argumentHint: "<url>" },
-      { name: "/figma tokens", description: "List design tokens" },
-      { name: "/figma to-react", description: "Generate a React component from the selection" },
-    ],
+    commands: [],
     agents: [],
-    skills: [
-      { name: "token-translator", description: "Converts Figma Variables to Tailwind theme config." },
-    ],
+    skills: [],
     hooks: [],
     mcpServers: [
       { name: "figma", command: "npx", args: ["-y", "@figma/mcp-server"], description: "Figma API." },
@@ -243,10 +253,7 @@ export const plugins: Plugin[] = [
       { version: "1.2.0", releasedAt: "2026-02-22T14:30:00Z", changelog: "Add Tailwind token mapping." },
     ],
     signals: [],
-    usage: { installs30d: 198, installsAllTime: 1423, activeUsers7d: 144, topCommands: [
-      { name: "/figma to-react", count: 602 },
-      { name: "/figma tokens", count: 414 },
-    ] },
+    usage: { installs30d: 198, installsAllTime: 1423, activeUsers7d: 144, topCommands: [] },
     policyState: "approved",
     updatedAt: "2026-04-01T12:00:00Z",
   },
@@ -256,6 +263,7 @@ export const plugins: Plugin[] = [
     description:
       "Acme security team's assistant. Runs threat modeling prompts, dependency CVE checks, and secret scanning across the open repo.",
     version: "0.4.0",
+    provider: "claude-code",
     category: "security",
     author: { name: "Acme Security", email: "security@acme.corp" },
     keywords: ["security", "threat-model", "cve", "secrets"],
@@ -289,38 +297,32 @@ export const plugins: Plugin[] = [
     updatedAt: "2026-04-08T10:10:00Z",
   },
   {
-    slug: "docs-writer",
+    slug: "docs-writer-gemini",
     name: "Docs Writer",
     description:
-      "Ships technical documentation that matches your existing tone. Walks your docs repo, infers voice, and writes the next page.",
+      "Gemini extension that ships technical documentation in your existing voice. Walks your docs repo and writes the next page.",
     version: "2.0.1",
+    provider: "gemini",
     category: "writing",
     author: { name: "Lina Park", url: "https://github.com/linapark" },
     keywords: ["docs", "writing", "technical", "markdown"],
     license: "MIT",
     sourceId: "community-curated",
-    commands: [
-      { name: "/docs new", description: "Scaffold a new docs page from a title" },
-      { name: "/docs polish", description: "Rewrite the current file in-house voice" },
-    ],
-    agents: [
-      { name: "docs-voice", description: "Infers and maintains a consistent documentation voice.", model: "opus" },
-    ],
-    skills: [
-      { name: "mdx-formatter", description: "Reformats MDX while preserving admonitions and import order." },
-      { name: "changelog-smith", description: "Turns a tag diff into a user-facing changelog." },
-    ],
+    commands: [],
+    agents: [],
+    skills: [],
     hooks: [],
     mcpServers: [],
+    extensions: [
+      { name: "docs.new", description: "Scaffold a new docs page from a title.", trigger: "when user asks to create docs" },
+      { name: "docs.polish", description: "Rewrite a file in the project's voice.", trigger: "when user asks to polish prose" },
+    ],
     versions: [
       { version: "2.0.1", releasedAt: "2026-03-30T09:00:00Z", changelog: "MDX formatter respects remark plugins." },
-      { version: "2.0.0", releasedAt: "2026-03-12T13:04:00Z", changelog: "Rewrite; v1 config not compatible." },
+      { version: "2.0.0", releasedAt: "2026-03-12T13:04:00Z", changelog: "Rewrite as a Gemini extension; v1 config not compatible." },
     ],
     signals: [],
-    usage: { installs30d: 342, installsAllTime: 2104, activeUsers7d: 231, topCommands: [
-      { name: "/docs polish", count: 1032 },
-      { name: "/docs new", count: 411 },
-    ] },
+    usage: { installs30d: 342, installsAllTime: 2104, activeUsers7d: 231, topCommands: [] },
     policyState: "approved",
     updatedAt: "2026-03-30T09:00:00Z",
   },
@@ -330,16 +332,13 @@ export const plugins: Plugin[] = [
     description:
       "Kubernetes day-two operations. Explain what changed, draft kubectl commands for common fixes, and produce cluster health reports.",
     version: "1.5.2",
+    provider: "mcp",
     category: "devops",
     author: { name: "Dmitri Vasquez" },
     keywords: ["kubernetes", "k8s", "ops", "infra"],
     license: "MIT",
     sourceId: "community-curated",
-    commands: [
-      { name: "/k8s diff", description: "Explain what changed in the cluster since a given time" },
-      { name: "/k8s health", description: "Produce a cluster health report" },
-      { name: "/k8s fix", description: "Draft kubectl commands for a described issue" },
-    ],
+    commands: [],
     agents: [],
     skills: [],
     hooks: [],
@@ -352,41 +351,37 @@ export const plugins: Plugin[] = [
     signals: [
       { id: "s5", severity: "high", title: "kubectl shell access", detail: "The Kubernetes MCP can execute arbitrary kubectl commands in the caller's active context. Pair with RBAC on the cluster side — do not install broadly without review.", scanner: "mcp-scope" },
     ],
-    usage: { installs30d: 91, installsAllTime: 702, activeUsers7d: 58, topCommands: [
-      { name: "/k8s health", count: 214 },
-    ] },
+    usage: { installs30d: 91, installsAllTime: 702, activeUsers7d: 58, topCommands: [] },
     policyState: "quarantined",
     updatedAt: "2026-03-25T18:14:00Z",
   },
   {
-    slug: "linear-sync",
-    name: "Linear Sync",
+    slug: "linear-gpt",
+    name: "Linear GPT",
     description:
-      "Keep Linear and your editor context in sync. Pull issue context into the prompt, draft updates, close issues from commit messages.",
+      "OpenAI GPT with Linear Actions. Pull issue context into the prompt, draft updates, close issues from commit messages.",
     version: "1.0.0",
+    provider: "openai",
     category: "productivity",
     author: { name: "Marco Silva" },
     keywords: ["linear", "issues", "project-management"],
     license: "MIT",
-    sourceId: "community-curated",
-    commands: [
-      { name: "/linear pull", description: "Pull issue context into the chat" },
-      { name: "/linear close", description: "Close the active issue with a generated summary" },
-    ],
+    sourceId: "openai-store",
+    commands: [],
     agents: [],
     skills: [],
     hooks: [],
-    mcpServers: [
-      { name: "linear", command: "npx", args: ["-y", "@linear/mcp-server"], description: "Linear API." },
+    mcpServers: [],
+    actions: [
+      { name: "get_issue", description: "Returns issue details by identifier.", scope: "read" },
+      { name: "update_issue", description: "Updates issue state, assignee, or priority.", scope: "write" },
+      { name: "close_issue", description: "Closes an issue with a completion summary.", scope: "write" },
     ],
     versions: [
-      { version: "1.0.0", releasedAt: "2026-04-05T15:30:00Z", changelog: "1.0. Stable API surface." },
+      { version: "1.0.0", releasedAt: "2026-04-05T15:30:00Z", changelog: "1.0. Stable Actions surface." },
     ],
     signals: [],
-    usage: { installs30d: 267, installsAllTime: 987, activeUsers7d: 201, topCommands: [
-      { name: "/linear pull", count: 811 },
-      { name: "/linear close", count: 132 },
-    ] },
+    usage: { installs30d: 267, installsAllTime: 987, activeUsers7d: 201, topCommands: [] },
     policyState: "approved",
     updatedAt: "2026-04-05T15:30:00Z",
   },
@@ -396,6 +391,7 @@ export const plugins: Plugin[] = [
     description:
       "Acme Data Engineering's plugin. Author, test, and deploy PySpark ETL jobs against our staging and prod clusters.",
     version: "0.2.0",
+    provider: "claude-code",
     category: "data",
     author: { name: "Acme Data Engineering" },
     keywords: ["spark", "etl", "pipelines", "internal"],
@@ -429,6 +425,56 @@ export const plugins: Plugin[] = [
     ] },
     policyState: "approved",
     updatedAt: "2026-04-14T09:21:00Z",
+  },
+  // Un-curated plugins — no category, empty keywords. Demo targets for the
+  // AI curation engine (see /admin/curation).
+  {
+    slug: "finance-forecaster",
+    name: "Finance Forecaster",
+    description:
+      "Runs monthly revenue and expense forecasts against historical data pulled from NetSuite. Produces a slide-deck-ready summary and flags variances.",
+    version: "0.1.3",
+    provider: "generic",
+    category: "other",
+    author: { name: "Acme FP&A" },
+    keywords: [],
+    license: "Proprietary",
+    sourceId: "acme-internal",
+    commands: [],
+    agents: [],
+    skills: [],
+    hooks: [],
+    mcpServers: [
+      { name: "netsuite", command: "/opt/acme/fin/netsuite-mcp", description: "Read-only NetSuite access." },
+    ],
+    versions: [{ version: "0.1.3", releasedAt: "2026-04-15T11:00:00Z" }],
+    signals: [],
+    usage: { installs30d: 8, installsAllTime: 8, activeUsers7d: 7, topCommands: [] },
+    policyState: "quarantined",
+    updatedAt: "2026-04-15T11:00:00Z",
+  },
+  {
+    slug: "meeting-notes",
+    name: "Meeting Notes",
+    description:
+      "Summarizes transcripts from meeting recordings. Extracts decisions, action items with owners, and open questions.",
+    version: "0.9.0",
+    provider: "generic",
+    category: "other",
+    author: { name: "Jordan Rhee" },
+    keywords: [],
+    license: "MIT",
+    sourceId: "community-curated",
+    commands: [],
+    agents: [],
+    skills: [],
+    hooks: [],
+    mcpServers: [],
+    versions: [{ version: "0.9.0", releasedAt: "2026-04-13T09:00:00Z" }],
+    signals: [],
+    usage: { installs30d: 42, installsAllTime: 42, activeUsers7d: 31, topCommands: [] },
+    policyState: "quarantined",
+    updatedAt: "2026-04-13T09:00:00Z",
   },
 ];
 

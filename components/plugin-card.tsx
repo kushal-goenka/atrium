@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Plugin, Source } from "@/lib/types";
+import { PROVIDER_LABELS } from "@/lib/types";
 import { Badge } from "./badge";
 import { formatNumber, formatRelative } from "@/lib/utils";
 
@@ -41,7 +42,11 @@ export function PluginCard({ plugin, source }: Props) {
     plugin.skills.length ? `${plugin.skills.length} skill` : null,
     plugin.mcpServers.length ? `${plugin.mcpServers.length} mcp` : null,
     plugin.hooks.length ? `${plugin.hooks.length} hook` : null,
+    plugin.actions?.length ? `${plugin.actions.length} action` : null,
+    plugin.extensions?.length ? `${plugin.extensions.length} ext` : null,
   ].filter(Boolean) as string[];
+
+  const uncurated = plugin.keywords.length === 0 && plugin.category === "other";
 
   return (
     <Link
@@ -64,6 +69,7 @@ export function PluginCard({ plugin, source }: Props) {
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
+          <Badge variant="neutral">{PROVIDER_LABELS[plugin.provider]}</Badge>
           {source ? (
             <Badge variant={trustVariant[source.trust]}>{trustLabel[source.trust]}</Badge>
           ) : null}
@@ -109,6 +115,7 @@ export function PluginCard({ plugin, source }: Props) {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {uncurated ? <Badge variant="info">Needs curation</Badge> : null}
           {signalBadge ? <Badge variant={signalBadge.variant}>{signalBadge.label}</Badge> : null}
           <span className="text-[11.5px] text-[color:var(--color-fg-subtle)]">
             updated {formatRelative(plugin.updatedAt)}
