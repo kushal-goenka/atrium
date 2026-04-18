@@ -6,7 +6,9 @@ test.describe("/mkt/marketplace.json", () => {
     expect(res.ok()).toBe(true);
 
     const body = await res.json();
-    expect(body.name).toMatch(/^atrium@/);
+    // Marketplace name is the org's (from ATRIUM_ORG_NAME), not "atrium@…".
+    expect(typeof body.name).toBe("string");
+    expect(body.name.length).toBeGreaterThan(0);
     expect(body.owner).toBeDefined();
     expect(Array.isArray(body.plugins)).toBe(true);
     expect(body.plugins.length).toBeGreaterThan(0);
