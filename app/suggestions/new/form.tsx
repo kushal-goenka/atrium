@@ -30,17 +30,18 @@ export function NewSuggestionForm() {
       <Field
         label="Type"
         error={state.fieldErrors?.kind}
-        hint="What kind of suggestion is this?"
+        hint="What do you wish an agent could do?"
       >
         <select
           name="kind"
           defaultValue="plugin-request"
           className="h-10 w-full rounded-[var(--radius)] border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-3 text-[14px] focus:border-[color:var(--color-border-strong)] focus:outline-none"
         >
-          <option value="plugin-request">Plugin request</option>
-          <option value="feature">Atrium feature</option>
-          <option value="bug">Bug / issue</option>
-          <option value="general">General discussion</option>
+          <option value="plugin-request">Plugin request — a full plugin</option>
+          <option value="skill-request">Skill request — a specific task-triggered skill</option>
+          <option value="capability-gap">Capability gap — agents handle X poorly today</option>
+          <option value="integration">Integration — connect to an MCP server / tool / service</option>
+          <option value="general">Discussion — open-ended</option>
         </select>
       </Field>
 
@@ -59,14 +60,18 @@ export function NewSuggestionForm() {
         </select>
       </Field>
 
-      <Field label="Details" error={state.fieldErrors?.body} hint="Markdown supported.">
+      <Field
+        label="Details"
+        error={state.fieldErrors?.body}
+        hint="Markdown. Lead with what you'd do with it."
+      >
         <textarea
           name="body"
           required
           minLength={10}
           maxLength={4000}
           rows={7}
-          placeholder="Who would use it? What does it do? Does an upstream exist we can federate, or does this need a new internal plugin?"
+          placeholder={`What task is the agent doing poorly today? What should it do instead?\n\nExamples:\n- "Claude can't summarize a Linear cycle well — a plugin could pull the cycle's issues + status and output a retro doc"\n- "Agents keep re-inventing SQL joins against our warehouse — a skill that injects our star-schema docs before any /sql call"\n- "Add an MCP server for our internal Slack; read-only is fine"`}
           className="w-full rounded-[var(--radius)] border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] p-3 font-mono text-[13px] leading-relaxed focus:border-[color:var(--color-border-strong)] focus:outline-none"
         />
       </Field>

@@ -12,7 +12,15 @@ export interface CreateSuggestionState {
   fieldErrors?: Partial<Record<"title" | "body" | "kind", string>>;
 }
 
-const KINDS = new Set(["plugin-request", "feature", "bug", "general"]);
+// Suggestion kinds are intentionally about *what agents should do better*,
+// not about Atrium-the-product. Bugs in Atrium itself belong on GitHub.
+const KINDS = new Set([
+  "plugin-request",
+  "skill-request",
+  "capability-gap",
+  "integration",
+  "general",
+]);
 const PROVIDERS = new Set(["claude-code", "openai", "gemini", "mcp", "generic"]);
 
 export async function createSuggestionAction(

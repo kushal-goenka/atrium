@@ -18,9 +18,13 @@ const STATUS_VARIANT: Record<string, "accent" | "info" | "ok" | "warn" | "neutra
 
 const KIND_LABEL: Record<string, string> = {
   "plugin-request": "Plugin request",
-  feature: "Feature",
-  bug: "Bug",
+  "skill-request": "Skill request",
+  "capability-gap": "Capability gap",
+  integration: "Integration",
   general: "Discussion",
+  // Legacy values still in DB — kept so pre-rename rows render sanely.
+  feature: "Atrium feature (legacy)",
+  bug: "Bug (legacy)",
 };
 
 export default async function SuggestionsPage({
@@ -51,12 +55,20 @@ export default async function SuggestionsPage({
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3 border-b border-[color:var(--color-border)] pb-6">
         <div>
           <p className="text-[11.5px] font-mono uppercase tracking-[0.08em] text-[color:var(--color-fg-subtle)]">
-            Community
+            Capability wishlist
           </p>
           <h1 className="mt-2 text-[24px] font-semibold tracking-tight">Suggestions</h1>
           <p className="mt-1 max-w-2xl text-[13.5px] text-[color:var(--color-fg-muted)]">
-            What plugins should the registry carry? What integrations do you want? Upvote ideas
-            you&apos;d use, or submit your own. Admins triage here.
+            What should agents do that they don&apos;t do well today? Request a plugin, a skill, an
+            integration, or flag a gap. Upvote the ideas you&apos;d use. Curators turn the top of
+            the list into real work — or file bugs against Atrium itself on{" "}
+            <a
+              href="https://github.com/kushal-goenka/atrium/issues"
+              className="text-[color:var(--color-accent)] underline-offset-4 hover:underline"
+            >
+              GitHub
+            </a>
+            .
           </p>
         </div>
         <Link
