@@ -3,6 +3,7 @@ import { plugins } from "@/data/plugins";
 import { listAllSources } from "@/lib/sources";
 import { Badge } from "@/components/badge";
 import { SyncSourceButton } from "@/components/sync-source-button";
+import { SourceSnapshots } from "@/components/source-snapshots";
 import { formatRelative } from "@/lib/utils";
 
 export const metadata = { title: "Sources" };
@@ -97,6 +98,8 @@ export default async function SourcesPage() {
                   ))}
                 </div>
               ) : null}
+
+              <SourceSnapshots sourceKey={s.id} />
             </li>
           );
         })}
