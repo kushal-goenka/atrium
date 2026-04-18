@@ -1,5 +1,8 @@
 import { Suspense } from "react";
 import { plugins } from "@/data/plugins";
+
+// Reads from DB (sources) — can't prerender at build.
+export const dynamic = "force-dynamic";
 import { Catalog } from "@/components/catalog";
 import { formatRelative } from "@/lib/utils";
 import { getBranding } from "@/lib/branding";

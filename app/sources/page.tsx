@@ -5,6 +5,7 @@ import { Badge } from "@/components/badge";
 import { formatRelative } from "@/lib/utils";
 
 export const metadata = { title: "Sources" };
+export const dynamic = "force-dynamic";
 
 export default async function SourcesPage() {
   const sources = await listAllSources();

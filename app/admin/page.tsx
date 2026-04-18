@@ -5,6 +5,8 @@ import { Badge } from "@/components/badge";
 import { formatNumber, formatRelative } from "@/lib/utils";
 import { ApprovalActions } from "@/components/approval-actions";
 
+export const dynamic = "force-dynamic";
+
 const auditLog = [
   { at: "2026-04-17T08:12:00Z", actor: "ingest", action: "sync", target: "Acme Corp internal", detail: "2 plugins updated" },
   { at: "2026-04-17T07:44:00Z", actor: "alice@acme.corp", action: "install", target: "incident-commander@2.3.1", detail: "via Claude Code" },
