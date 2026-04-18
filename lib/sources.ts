@@ -1,31 +1,34 @@
 import { prisma } from "./prisma";
 import type { Source } from "./types";
-import { sources as staticSources } from "@/data/plugins";
+import { plugins } from "@/data/plugins";
 
 /**
- * Lists all sources visible to the catalog: the built-in seed sources plus
- * any sources admins have added via the Add-source flow.
- *
- * Reads are ordered to prefer DB rows over static duplicates by `key`.
+ * Count of plugins observed for each source. Will be replaced by a DB query
+ * once plugins migrate off the static fixture in M1.
+ */
+function pluginCountFor(sourceKey: string): number {
+  return plugins.filter((p) => p.sourceId === sourceKey).length;
+}
+
+/**
+ * All sources visible to the catalog, oldest-first so the built-in seed
+ * rows (official → verified → internal) always lead regardless of when
+ * user-added sources appeared.
  */
 export async function listAllSources(): Promise<Source[]> {
-  const dbRows = await prisma.source
-    .findMany({ orderBy: { createdAt: "desc" } })
-    .catch(() => []);
+  const rows = await prisma.source.findMany({
+    orderBy: { createdAt: "asc" },
+  });
 
-  const dbSources: Source[] = dbRows.map((row) => ({
+  return rows.map((row) => ({
     id: row.key,
     name: row.name,
     kind: (row.kind as Source["kind"]) ?? "http",
     url: row.url ?? undefined,
     trust: (row.trust as Source["trust"]) ?? "community",
     lastSyncedAt: row.updatedAt.toISOString(),
-    pluginCount: 0, // populated lazily; 0 until first sync
+    pluginCount: pluginCountFor(row.key),
   }));
-
-  const seen = new Set(dbSources.map((s) => s.id));
-  const merged = [...dbSources, ...staticSources.filter((s) => !seen.has(s.id))];
-  return merged;
 }
 
 export interface NewSourceInput {

@@ -26,3 +26,9 @@ prisma/dev.db
 # build artifacts
 dist/
 *.tsbuildinfo
+
+# tests
+test-results/
+playwright-report/
+coverage/
+.vitest-cache/

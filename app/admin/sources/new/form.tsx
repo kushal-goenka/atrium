@@ -131,16 +131,19 @@ function Field({
   hint?: string;
   children: React.ReactNode;
 }) {
+  // Wrapping the input in the label gives it an accessible name without needing
+  // an explicit htmlFor/id pairing. For fieldset-shaped groups (radios) we use
+  // aria-label on the group instead; see the radio block above.
   return (
-    <div>
-      <label className="mb-1 flex items-baseline justify-between gap-3">
+    <label className="block">
+      <div className="mb-1 flex items-baseline justify-between gap-3">
         <span className="text-[13px] font-medium text-[color:var(--color-fg)]">{label}</span>
         {hint ? (
           <span className="text-[11.5px] text-[color:var(--color-fg-subtle)]">{hint}</span>
         ) : null}
-      </label>
+      </div>
       {children}
-    </div>
+    </label>
   );
 }
 
