@@ -130,16 +130,21 @@ export default async function AdminDashboard() {
         <Panel title="Audit log" hint="immutable · last 24h">
           <ul className="divide-y divide-[color:var(--color-border)]">
             {auditLog.map((ev, i) => (
-              <li key={i} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 py-2.5 text-[12.5px]">
+              <li
+                key={i}
+                className="flex flex-col gap-1 py-2.5 text-[12.5px] sm:grid sm:grid-cols-[auto_1fr_auto] sm:items-center sm:gap-3"
+              >
                 <span className="font-mono text-[11.5px] text-[color:var(--color-fg-subtle)]">
                   {formatRelative(ev.at)}
                 </span>
-                <span>
+                <span className="min-w-0 break-words">
                   <span className="font-mono text-[color:var(--color-fg-muted)]">{ev.actor}</span>{" "}
                   <span className="font-medium text-[color:var(--color-fg)]">{ev.action}</span>{" "}
                   <span className="font-mono text-[color:var(--color-fg-muted)]">{ev.target}</span>
                 </span>
-                <span className="text-right text-[color:var(--color-fg-subtle)]">{ev.detail}</span>
+                <span className="text-[color:var(--color-fg-subtle)] sm:text-right">
+                  {ev.detail}
+                </span>
               </li>
             ))}
           </ul>

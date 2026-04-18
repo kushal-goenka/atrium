@@ -23,7 +23,7 @@ Point your team at one URL. Get a beautiful catalog, one-click install snippets,
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/browse.png" alt="Browse page" width="80%" />
+  <img src="docs/screenshots/browse.png" alt="Browse page (dark)" width="80%" />
 </p>
 
 <p align="center">
@@ -33,6 +33,31 @@ Point your team at one URL. Get a beautiful catalog, one-click install snippets,
 <p align="center">
   <img src="docs/screenshots/admin.png" alt="Admin dashboard" width="80%" />
 </p>
+
+<details>
+<summary><b>Also: light theme · mobile · add-source · sources</b></summary>
+
+<p align="center">
+  <img src="docs/screenshots/browse-light.png" alt="Browse page (light)" width="70%" />
+  <br><em>Light theme. Toggle in the nav persists per-user.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/browse-mobile.png" alt="Browse page (mobile)" width="30%" />
+  <br><em>Responsive down to 375px.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/add-source.png" alt="Add a federated source" width="70%" />
+  <br><em>Server-validated form; new sources appear in the catalog on submit.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/sources.png" alt="Federated sources" width="70%" />
+  <br><em>Each source has a trust tier that drives policy decisions.</em>
+</p>
+
+</details>
 
 ## Why Atrium
 
@@ -128,6 +153,19 @@ Before a production deploy, complete the ops checklist in [`SECURITY.md`](SECURI
 Next.js 15 (App Router, Server Components) · React 19 · Tailwind v4 · Prisma 6 (Postgres / SQLite) · TypeScript strict · No shadcn dep, components are in-tree · Apache 2.0.
 
 **Philosophy:** boring stack, obvious code. A platform engineer should be able to read and patch Atrium in an afternoon.
+
+## Testing
+
+```bash
+pnpm test          # unit (vitest) — 56 tests
+pnpm test:e2e      # end-to-end (playwright) — 21 tests
+pnpm typecheck     # strict TypeScript
+pnpm build         # production build verification
+```
+
+- **Unit** covers `lib/utils`, `lib/branding`, `lib/sources`, `lib/manifest`, git/http ingest adapters (mocked `fetch` + URL-validation cases), and Server Action validation paths (mocked `next/cache` + `next/navigation`).
+- **E2E** covers browse/filter/search, category + source narrowing, plugin detail manifest rendering, install snippet, flag-for-rescan, admin stats, approve flow, add-source end-to-end, users page, `/mkt/marketplace.json` contract, theme persistence, URL-filter round-trip.
+- **CI** (GitHub Actions) runs typecheck + unit + build in one job, then e2e in a separate job gated behind them, uploading the Playwright report on failure.
 
 ## Contributing
 

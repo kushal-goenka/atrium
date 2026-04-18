@@ -9,6 +9,9 @@ const MANIFEST = {
 describe("fetchFromHttp", () => {
   const originalFetch = globalThis.fetch;
   const originalEnv = process.env.NODE_ENV;
+  // Cast through unknown because @types/node marks NODE_ENV read-only
+  // even though Node itself allows reassignment at runtime.
+  const env = process.env as unknown as Record<string, string | undefined>;
 
   beforeEach(() => {
     globalThis.fetch = vi.fn();
@@ -16,7 +19,7 @@ describe("fetchFromHttp", () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
-    process.env.NODE_ENV = originalEnv;
+    env.NODE_ENV = originalEnv;
   });
 
   it("fetches and parses a valid manifest", async () => {
@@ -57,12 +60,12 @@ describe("fetchFromHttp", () => {
   });
 
   it("rejects http:// in production", async () => {
-    process.env.NODE_ENV = "production";
+    env.NODE_ENV = "production";
     await expect(fetchFromHttp("http://example.com/x.json")).rejects.toThrow(/not permitted/);
   });
 
   it("allows http:// in development", async () => {
-    process.env.NODE_ENV = "development";
+    env.NODE_ENV = "development";
     vi.mocked(globalThis.fetch).mockResolvedValue(new Response(JSON.stringify(MANIFEST)));
     await expect(fetchFromHttp("http://localhost:8080/x.json")).resolves.toBeDefined();
   });
