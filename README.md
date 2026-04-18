@@ -170,6 +170,10 @@ The pin + fork + diff combination gives orgs full control over third-party code 
 - **Version pinning + forking** — pin any plugin; fork external plugins into your internal source with upstream snapshot preserved.
 - **LLM provider vault** — AES-256-GCM encrypted API keys, baseUrl-aware for LiteLLM-style proxies, Test button for round-trip verification.
 - **Add source** — server-validated form + Prisma-backed persistence; new sources appear immediately.
+- **Public REST API** — `/api/v1/plugins`, `/api/v1/sources`, `/api/v1/metrics/usage` with bearer-token auth, scoped access (`read:catalog` / `write:sources` / `write:plugins`), per-IP rate limits, and an OpenAPI 3.1 spec at `/api/v1/openapi.json`. Admin UI to issue/revoke tokens at `/admin/tokens`.
+- **Suggestions forum** — community queue at `/suggestions` for plugin requests, feature ideas, bugs. Users upvote; admins triage to `under-review → in-progress → shipped` with audit trail.
+- **User-contributed skills** — engineers upload their own `SKILL.md` from their profile (`/users/[id]/upload`). Lands in quarantine, a curator approves at `/admin/uploads`, then appears in the catalog attributed to the uploader.
+- **Air-gap posture** — `ATRIUM_AIRGAP=strict` blocks every outbound fetch; `allowlist` restricts to `ATRIUM_ALLOWED_HOSTS`. Ingest adapters check the gate before hitting the network; the admin dashboard shows the current mode inline.
 - **Multi-client install matrix** — plugin detail ships commands for Claude Code (inline + CLI), OpenAI Codex, Cursor, Gemini CLI, Aider, and raw MCP JSON. Every client gets its native install path, not a generic snippet.
 - **User identity** — acting-as user switcher in the nav, per-user profile pages at `/users/[id]` showing role, team, and install activity. Audit actors link to profiles.
 - **Optional auth modes** — run `open` (no login, internal-network default), `admin-password` (single shared password gates `/admin/*`, browse stays open), or `sso` (OIDC/SAML — planned for v0.2).
@@ -195,10 +199,10 @@ Past releases:
 
 Coming up:
 
-- **v0.2** — full per-user SSO (OIDC + SAML), four-eyes approval, full RBAC enforcement, public REST API for automation, signed user-contributed skill uploads.
+- **v0.2** — full per-user SSO (OIDC + SAML), four-eyes approval, full RBAC enforcement, signed-artifact serving at `/mkt/plugins/*.tar.gz` for fully air-gapped deploys.
 - **v0.3** — OpenTelemetry end-to-end, admin metrics page, plugin usage analytics per user/team.
-- **v0.4** — policy engine, scanners (hook-shell, MCP scope, CVE), notifications (Slack / webhook / email), suggestion forum.
-- **v0.5** — signed releases, SBOM, provenance, bug bounty. Air-gapped deployment guide (no external fetches at all).
+- **v0.4** — policy engine, scanners (hook-shell, MCP scope, CVE), notifications (Slack / webhook / email), merge-from-upstream for forks.
+- **v0.5** — signed releases, SBOM, provenance, bug bounty. Federated-forum protocol so Atriums can share suggestions across orgs.
 
 See [`ROADMAP.md`](ROADMAP.md) for per-release detail.
 
@@ -250,7 +254,7 @@ Next.js 15 (App Router, Server Components) · React 19 · Tailwind v4 · Prisma 
 ## Testing
 
 ```bash
-pnpm test          # unit (vitest) — 73 tests
+pnpm test          # unit (vitest) — 94 tests
 pnpm test:e2e      # end-to-end (playwright) — 23+ tests
 pnpm typecheck     # strict TypeScript
 pnpm build         # production build verification

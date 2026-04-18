@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { findUser, MOCK_USERS } from "@/lib/users";
+import { currentUser, findUser, MOCK_USERS } from "@/lib/users";
 import { plugins as staticPlugins } from "@/data/plugins";
+import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/badge";
 import { formatRelative } from "@/lib/utils";
 
@@ -44,6 +45,14 @@ export default async function UserPage(
   const { id } = await params;
   const user = findUser(id);
   if (!user) return notFound();
+  const [me, uploads] = await Promise.all([
+    currentUser(),
+    prisma.uploadedSkill.findMany({
+      where: { uploadedBy: user.id },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+  const isSelf = me.id === user.id;
   const activity = activityFor(user.id);
 
   return (
@@ -70,6 +79,14 @@ export default async function UserPage(
             Last seen {formatRelative(user.lastSeen)}.
           </p>
         </div>
+        {isSelf ? (
+          <Link
+            href={`/users/${user.id}/upload`}
+            className="inline-flex h-9 shrink-0 items-center self-center rounded-md bg-[color:var(--color-accent)] px-3 text-[13px] font-medium text-[color:var(--color-accent-fg)]"
+          >
+            + Upload a skill
+          </Link>
+        ) : null}
       </header>
 
       <section className="mt-8">
@@ -104,14 +121,63 @@ export default async function UserPage(
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-2 text-[14px] font-semibold tracking-tight">Contributions</h2>
+        <h2 className="mb-2 text-[14px] font-semibold tracking-tight">
+          Contributions{" "}
+          <span className="ml-1 font-mono text-[11.5px] text-[color:var(--color-fg-subtle)]">
+            {uploads.length}
+          </span>
+        </h2>
         <p className="text-[12.5px] text-[color:var(--color-fg-muted)]">
-          Skills and plugins this user has published to the internal source land here. The
-          upload flow lives on the user profile (own profile only) once implemented.
+          Skills this user has uploaded. Approved contributions appear in the catalog under the
+          <code className="ml-1 font-mono">user-contributions</code> source.
         </p>
-        <div className="mt-3 rounded-[var(--radius-lg)] border border-dashed border-[color:var(--color-border-strong)] px-6 py-8 text-center text-[13px] text-[color:var(--color-fg-subtle)]">
-          No contributions yet.
-        </div>
+        {uploads.length === 0 ? (
+          <div className="mt-3 rounded-[var(--radius-lg)] border border-dashed border-[color:var(--color-border-strong)] px-6 py-8 text-center text-[13px] text-[color:var(--color-fg-subtle)]">
+            {isSelf ? (
+              <>
+                Nothing uploaded yet.{" "}
+                <Link
+                  href={`/users/${user.id}/upload`}
+                  className="text-[color:var(--color-accent)] hover:underline"
+                >
+                  Publish your first skill →
+                </Link>
+              </>
+            ) : (
+              "No contributions yet."
+            )}
+          </div>
+        ) : (
+          <ul className="mt-3 divide-y divide-[color:var(--color-border)] rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)]">
+            {uploads.map((u) => (
+              <li key={u.id} className="flex items-start justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13.5px] font-medium">{u.name}</span>
+                    <Badge
+                      variant={
+                        u.policyState === "approved"
+                          ? "ok"
+                          : u.policyState === "rejected"
+                            ? "danger"
+                            : "warn"
+                      }
+                    >
+                      {u.policyState}
+                    </Badge>
+                    <Badge>{u.category}</Badge>
+                  </div>
+                  <p className="mt-1 text-[12.5px] text-[color:var(--color-fg-muted)]">
+                    {u.description}
+                  </p>
+                </div>
+                <span className="shrink-0 font-mono text-[11.5px] text-[color:var(--color-fg-subtle)]">
+                  {formatRelative(u.createdAt.toISOString())}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );

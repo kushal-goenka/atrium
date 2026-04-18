@@ -52,6 +52,12 @@ export async function Nav() {
             Sources
           </Link>
           <Link
+            href="/suggestions"
+            className="rounded-md px-2.5 py-1.5 font-medium hover:bg-[color:var(--color-bg-sunken)] hover:text-[color:var(--color-fg)]"
+          >
+            Suggestions
+          </Link>
+          <Link
             href="/admin"
             className="rounded-md px-2.5 py-1.5 font-medium hover:bg-[color:var(--color-bg-sunken)] hover:text-[color:var(--color-fg)]"
           >

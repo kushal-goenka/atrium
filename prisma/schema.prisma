@@ -304,3 +304,66 @@ model CurationSuggestion {
 
   @@index([pluginKey, status])
 }
+
+/// ---------- community feedback ----------
+
+/// User-submitted suggestion / plugin request. Surfaces in /suggestions,
+/// and admins can triage (close, mark shipped, convert to an internal
+/// plugin request). Vote count is denormalized for ordering; the canonical
+/// truth lives in SuggestionVote.
+model Suggestion {
+  id            String   @id @default(cuid())
+  title         String
+  body          String
+  /// "plugin-request" | "feature" | "bug" | "general"
+  kind          String   @default("plugin-request")
+  /// "claude-code" | "openai" | "gemini" | "mcp" | "generic" | null
+  provider      String?
+  /// "open" | "under-review" | "in-progress" | "shipped" | "closed"
+  status        String   @default("open")
+  createdBy     String
+  createdByName String?
+  votes         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([votes])
+}
+
+model SuggestionVote {
+  id           String   @id @default(cuid())
+  suggestionId String
+  /// Mock-user email in the alpha; Prisma User.id once SSO lands.
+  userId       String
+  at           DateTime @default(now())
+
+  @@unique([suggestionId, userId])
+}
+
+/// ---------- user-contributed skills ----------
+
+/// A skill uploaded by an end user (not an admin federating from an
+/// external source). Lands in quarantine by default; curator promotes it
+/// into the "user-contributions" internal source's surface.
+model UploadedSkill {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  /// Markdown body of the skill (SKILL.md contents).
+  body        String
+  /// Freeform csv of user-supplied tags; the AI curator can suggest more.
+  keywords    String
+  category    String   @default("other")
+  uploadedBy  String
+  uploaderName String?
+  version     String   @default("0.1.0")
+  /// "quarantined" | "approved" | "rejected"
+  policyState String   @default("quarantined")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([uploadedBy])
+  @@index([policyState])
+}

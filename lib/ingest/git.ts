@@ -4,6 +4,7 @@ import { promisify } from "node:util";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { parseManifestJson, type RawMarketplaceManifest } from "../manifest";
+import { assertOutboundAllowed } from "../airgap";
 
 const exec = promisify(execFile);
 
@@ -35,6 +36,18 @@ export interface GitIngestOptions {
 export async function fetchFromGit(url: string, opts: GitIngestOptions = {}): Promise<GitIngestResult> {
   if (!isValidGitUrl(url)) {
     throw new Error(`refusing to clone suspicious URL: ${url}`);
+  }
+
+  // Air-gap check applies only to URLs with a host we can reason about; ssh-form
+  // `git@host:path` URLs are checked by extracting the host manually.
+  try {
+    const normalized = url.startsWith("git@")
+      ? `https://${url.slice(4).replace(":", "/")}`
+      : url;
+    assertOutboundAllowed(normalized);
+  } catch (err) {
+    // Preserve the precise air-gap error so the UI surfaces it.
+    throw err;
   }
 
   const dir = await mkdtemp(join(tmpdir(), "atrium-ingest-"));

@@ -1,4 +1,5 @@
 import { parseManifestJson, type RawMarketplaceManifest } from "../manifest";
+import { assertOutboundAllowed } from "../airgap";
 
 export interface HttpIngestResult {
   manifest: RawMarketplaceManifest;
@@ -25,6 +26,8 @@ export async function fetchFromHttp(url: string, opts: { timeoutMs?: number } = 
   if (parsedUrl.protocol === "http:" && process.env.NODE_ENV === "production") {
     throw new Error("http:// not permitted in production; use https://");
   }
+
+  assertOutboundAllowed(url);
 
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 10_000);

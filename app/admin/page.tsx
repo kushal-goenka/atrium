@@ -4,6 +4,7 @@ import { listAllSources } from "@/lib/sources";
 import { Badge } from "@/components/badge";
 import { formatNumber, formatRelative } from "@/lib/utils";
 import { ApprovalActions } from "@/components/approval-actions";
+import { describeAirgap } from "@/lib/airgap";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ const auditLog = [
 
 export default async function AdminDashboard() {
   const sources = await listAllSources();
+  const airgap = describeAirgap();
   const quarantined = plugins.filter((p) => p.policyState === "quarantined");
   const highSignals = plugins.filter((p) => p.signals.some((s) => s.severity === "high"));
   const totalInstalls30d = plugins.reduce((a, p) => a + (p.usage?.installs30d ?? 0), 0);
@@ -45,10 +47,22 @@ export default async function AdminDashboard() {
             LLM providers
           </Link>
           <Link
+            href="/admin/tokens"
+            className="inline-flex h-9 items-center rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-3 text-[13px] font-medium hover:border-[color:var(--color-border-strong)]"
+          >
+            API tokens
+          </Link>
+          <Link
             href="/admin/forks"
             className="inline-flex h-9 items-center rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-3 text-[13px] font-medium hover:border-[color:var(--color-border-strong)]"
           >
             Forks
+          </Link>
+          <Link
+            href="/admin/uploads"
+            className="inline-flex h-9 items-center rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-3 text-[13px] font-medium hover:border-[color:var(--color-border-strong)]"
+          >
+            Uploads
           </Link>
           <Link
             href="/admin/sources/new"
@@ -70,6 +84,25 @@ export default async function AdminDashboard() {
         <Stat label="Sources" value={sources.length.toString()} hint="all healthy" />
         <Stat label="Installs · 30d" value={formatNumber(totalInstalls30d)} hint="across all plugins" />
         <Stat label="Active users · 7d" value={formatNumber(activeUsers7d)} hint="unique, dedup" />
+      </div>
+
+      <div
+        className={`mt-4 flex flex-wrap items-center gap-3 rounded-[var(--radius)] border px-4 py-2.5 text-[12.5px] ${
+          airgap.mode === "open"
+            ? "border-[color:var(--color-border)] bg-[color:var(--color-bg-sunken)] text-[color:var(--color-fg-muted)]"
+            : "border-[color:var(--color-info)]/30 bg-[color:var(--color-info)]/5 text-[color:var(--color-info)]"
+        }`}
+      >
+        <span className="font-medium">
+          Air-gap:{" "}
+          <code className="font-mono text-[11.5px]">{airgap.mode}</code>
+        </span>
+        <span className="flex-1 truncate">{airgap.humanSummary}</span>
+        {airgap.allowedHosts.length > 0 ? (
+          <span className="font-mono text-[11px]">
+            {airgap.allowedHosts.length} allow-listed
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
