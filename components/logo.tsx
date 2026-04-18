@@ -17,15 +17,9 @@ export function Logo({ className, showWordmark = true, size = 28 }: Props) {
         aria-label="atrium"
         role="img"
       >
-        <path
-          d="M10 54V28a22 22 0 0 1 44 0v26"
-          stroke="currentColor"
-          strokeWidth="4"
-          strokeLinecap="round"
-        />
-        <circle cx="22" cy="46" r="3" fill="currentColor" />
-        <circle cx="32" cy="46" r="3" fill="currentColor" />
-        <circle cx="42" cy="46" r="3" fill="currentColor" />
+        <rect x="16" y="14" width="32" height="10" rx="5" fill="currentColor" fillOpacity="0.35" />
+        <rect x="8" y="27" width="48" height="10" rx="5" fill="currentColor" />
+        <rect x="22" y="40" width="20" height="10" rx="5" fill="currentColor" fillOpacity="0.6" />
       </svg>
       {showWordmark ? (
         <span className="text-[1.05rem] font-semibold tracking-tight">atrium</span>

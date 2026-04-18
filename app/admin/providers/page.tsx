@@ -18,6 +18,7 @@ const PROVIDER_INFO: Record<
   "azure-openai": { label: "Azure OpenAI", badge: "info" },
   gemini: { label: "Google Gemini", badge: "info" },
   "litellm-proxy": { label: "LiteLLM proxy", badge: "ok" },
+  ollama: { label: "Ollama (local)", badge: "ok" },
   custom: { label: "Custom (OpenAI-schema)", badge: "neutral" },
 };
 

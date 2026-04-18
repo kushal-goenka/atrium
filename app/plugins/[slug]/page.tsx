@@ -346,14 +346,14 @@ export default async function PluginDetail(
               Install
             </h2>
             <p className="mt-1 text-[12.5px] text-[color:var(--color-fg-muted)]">
-              Run this in Claude Code, pointed at this atrium.
+              Run this in Claude Code, pointed at your registry.
             </p>
             <div className="mt-3">
               <CopyCommand command={installCommand} />
             </div>
             <details className="mt-3 text-[12.5px]">
               <summary className="cursor-pointer text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg)]">
-                First time? Add this atrium.
+                First time? Add your registry.
               </summary>
               <div className="mt-2 space-y-2">
                 <CopyCommand command={`/plugin marketplace add https://${brand.atriumHostname}`} label="one-time setup" />

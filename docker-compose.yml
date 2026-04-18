@@ -1,5 +1,9 @@
 # atrium — single-command local / self-host setup
 # Usage: cp .env.example .env && docker compose up -d
+#
+# Optional profiles (enable with `--profile <name>`):
+#   - otel    : OpenTelemetry collector sidecar
+#   - ollama  : local-only LLM (Ollama) — keeps curation calls inside the cluster
 
 services:
   atrium:
@@ -44,5 +48,29 @@ services:
       - ./deploy/otel-collector.yaml:/etc/otelcol/config.yaml:ro
     profiles: ["otel"]
 
+  # Local LLM sidecar. Register it in Admin → LLM providers as:
+  #   provider  = ollama
+  #   baseUrl   = http://ollama:11434/v1
+  #   model     = llama3.2  (or any model you've pulled below)
+  #
+  # First-time setup pulls a model into the volume:
+  #   docker compose --profile ollama exec ollama ollama pull llama3.2
+  #
+  # Lightweight options: qwen2.5:3b, llama3.2:1b (fits in <2 GB)
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - atrium_ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+    profiles: ["ollama"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
 volumes:
   atrium_pgdata:
+  atrium_ollama:

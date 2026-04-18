@@ -120,9 +120,29 @@ Atrium serves Anthropic's `.claude-plugin/marketplace.json` format unchanged. Ve
 
 ## AI curation & LLM key vault
 
-Under Admin → LLM providers you can register API keys for Anthropic, OpenAI, Azure OpenAI, Gemini, or a LiteLLM proxy. Keys are encrypted at rest with AES-256-GCM using a key derived from `AUTH_SECRET`; only the last four characters are ever shown.
+Under Admin → LLM providers you can register credentials for Anthropic, OpenAI, Azure OpenAI, Gemini, a LiteLLM proxy (OpenAI-compatible), **Ollama running locally**, or any OpenAI-schema custom endpoint. Keys are encrypted at rest with AES-256-GCM using a key derived from `AUTH_SECRET`; only the last four characters are ever shown.
 
 Once at least one provider is configured, every plugin detail page gets a **Curation** panel: click **Suggest** to ask the configured LLM for a category and 3-6 tags, edit if desired, and **Apply override** to persist. The catalog immediately reflects the new metadata.
+
+### Local-only LLM (Ollama)
+
+If your threat model says "no plugin metadata leaves the cluster", register Ollama and keep everything on-box:
+
+```bash
+# Bring up the atrium + postgres + ollama sidecar.
+docker compose --profile ollama up -d
+
+# Pull a lightweight model (~1-3 GB on disk).
+docker compose exec ollama ollama pull llama3.2
+```
+
+Then in Admin → LLM providers add:
+
+- Provider: **Ollama (local)**
+- Base URL: `http://ollama:11434/v1`
+- Default model: `llama3.2` (or whatever you pulled)
+
+The API-key field is disabled for local providers. Curation calls stay inside the Docker network.
 
 ## Version pinning & forking
 
@@ -131,7 +151,9 @@ On any plugin, admins can:
 - **Pin** to a specific version — `/mkt/marketplace.json` serves that version regardless of upstream drift. Unpin to resume tracking upstream.
 - **Fork** an external plugin into your internal source. Atrium snapshots the upstream manifest at fork time and writes a `PluginFork` record you can diverge from independently. Upstream changes never overwrite a fork.
 
-The combination gives orgs full control over third-party code they redistribute: subscribe to any public marketplace, review, modify, pin, and serve your curated version.
+Every fork has a **diff view** (Admin → Forks → a fork → View diff) showing exactly what upstream has changed since you forked — new commands, hook additions, version bumps, added MCP servers. The diff is field-aware: it knows the difference between a new command and a modified description, so the signal-to-noise ratio stays high even when upstream is busy.
+
+The pin + fork + diff combination gives orgs full control over third-party code they redistribute: subscribe to any public marketplace, review, modify, pin, diff before merging, and serve your curated version.
 
 ## Features shipped in the alpha
 
@@ -204,13 +226,13 @@ Next.js 15 (App Router, Server Components) · React 19 · Tailwind v4 · Prisma 
 ## Testing
 
 ```bash
-pnpm test          # unit (vitest) — 66 tests
+pnpm test          # unit (vitest) — 73 tests
 pnpm test:e2e      # end-to-end (playwright) — 23+ tests
 pnpm typecheck     # strict TypeScript
 pnpm build         # production build verification
 ```
 
-- **Unit** covers `lib/utils`, `lib/branding`, `lib/sources`, `lib/manifest`, `lib/crypto` (AES-GCM round-trip + tamper detection), git/http ingest adapters (mocked `fetch` + URL-validation cases), and Server Action validation paths.
+- **Unit** covers `lib/utils`, `lib/branding`, `lib/sources`, `lib/manifest`, `lib/crypto` (AES-GCM round-trip + tamper detection), `lib/diff` (field-aware fork diff), git/http ingest adapters (mocked `fetch` + URL-validation cases), and Server Action validation paths.
 - **E2E** covers browse/filter/search, category + source + provider narrowing, plugin detail manifest rendering, install snippet, flag-for-rescan, admin stats, approve flow, add-source end-to-end, users page, `/mkt/marketplace.json` contract, `/api/health`, theme persistence, URL-filter round-trip.
 - **CI** (GitHub Actions) runs typecheck + unit + build in one job, then e2e in a separate job gated behind them, uploading the Playwright report on failure.
 

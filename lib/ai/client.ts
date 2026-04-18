@@ -49,6 +49,9 @@ export async function complete(req: CompletionRequest): Promise<CompletionRespon
   const apiKey = decryptSecret(picked.apiKeyCipher);
 
   // The per-provider switch isolates the provider-specific request shape.
+  // Ollama runs locally and speaks the OpenAI chat/completions schema — we
+  // reuse callOpenAI, skip the Authorization header, and default baseUrl to
+  // the Docker sidecar.
   const dispatch: Record<string, () => Promise<CompletionResponse>> = {
     anthropic: () => callAnthropic(apiKey, picked.baseUrl, picked.defaultModel, req),
     openai: () => callOpenAI(apiKey, picked.baseUrl, picked.defaultModel, req),
@@ -56,6 +59,14 @@ export async function complete(req: CompletionRequest): Promise<CompletionRespon
     "litellm-proxy": () => callOpenAI(apiKey, picked.baseUrl, picked.defaultModel, req),
     gemini: () => callGemini(apiKey, picked.baseUrl, picked.defaultModel, req),
     custom: () => callOpenAI(apiKey, picked.baseUrl, picked.defaultModel, req),
+    ollama: () =>
+      callOpenAI(
+        apiKey, // unused — omitted from headers below
+        picked.baseUrl ?? "http://localhost:11434/v1",
+        picked.defaultModel ?? "llama3.2",
+        req,
+        { sendAuth: false },
+      ),
   };
 
   const fn = dispatch[picked.provider];
@@ -104,6 +115,7 @@ async function callOpenAI(
   baseUrl: string | null,
   defaultModel: string | null,
   req: CompletionRequest,
+  opts: { sendAuth?: boolean } = {},
 ): Promise<CompletionResponse> {
   const url = (baseUrl ?? "https://api.openai.com/v1") + "/chat/completions";
   const model = defaultModel ?? "gpt-4o-mini";
@@ -115,12 +127,15 @@ async function callOpenAI(
       { role: "user", content: req.user },
     ],
   };
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+  };
+  if (opts.sendAuth !== false) {
+    headers.authorization = `Bearer ${apiKey}`;
+  }
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${apiKey}`,
-    },
+    headers,
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);

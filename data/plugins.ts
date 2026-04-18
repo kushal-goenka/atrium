@@ -29,7 +29,7 @@ export const sources: Source[] = [
     id: "community-curated",
     kind: "git",
     name: "Community (curated)",
-    url: "https://github.com/atrium-marketplace/curated",
+    url: "https://github.com/agentops-community/curated",
     lastSyncedAt: "2026-04-17T05:30:00Z",
     trust: "verified",
     pluginCount: 4,

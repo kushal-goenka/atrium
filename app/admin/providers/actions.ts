@@ -17,8 +17,12 @@ const ALLOWED = new Set([
   "azure-openai",
   "gemini",
   "litellm-proxy",
+  "ollama",
   "custom",
 ]);
+
+// Providers that run locally and don't require an API key.
+const LOCAL_PROVIDERS = new Set(["ollama"]);
 
 export async function upsertProviderAction(
   _prev: UpsertProviderState,
@@ -34,14 +38,19 @@ export async function upsertProviderAction(
   const fieldErrors: UpsertProviderState["fieldErrors"] = {};
   if (!ALLOWED.has(provider)) fieldErrors.provider = "Pick a supported provider";
   if (!displayName) fieldErrors.displayName = "Required";
-  if (!apiKey || apiKey.length < 8) fieldErrors.apiKey = "API key looks too short";
+  if (!LOCAL_PROVIDERS.has(provider) && (!apiKey || apiKey.length < 8)) {
+    fieldErrors.apiKey = "API key looks too short";
+  }
   if (baseUrl && !/^https?:\/\//.test(baseUrl)) fieldErrors.baseUrl = "Must be a full URL";
 
   if (Object.keys(fieldErrors).length) return { ok: false, fieldErrors };
 
   try {
-    const cipher = encryptSecret(apiKey);
-    const tail = apiKey.slice(-4);
+    // For local providers (Ollama) the "key" is a placeholder sentinel; the
+    // downstream client simply doesn't send an Authorization header.
+    const effectiveKey = LOCAL_PROVIDERS.has(provider) && !apiKey ? "local-no-auth" : apiKey;
+    const cipher = encryptSecret(effectiveKey);
+    const tail = effectiveKey.slice(-4);
 
     await prisma.providerConfig.upsert({
       where: { provider },

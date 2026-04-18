@@ -69,9 +69,17 @@ export default async function ForksPage() {
                     </p>
                   ) : null}
                 </div>
-                <span className="text-[11.5px] text-[color:var(--color-fg-subtle)]">
-                  {formatRelative(f.createdAt.toISOString())}
-                </span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Link
+                    href={`/admin/forks/${f.id}`}
+                    className="rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-2.5 py-1 text-[11.5px] font-medium hover:border-[color:var(--color-border-strong)]"
+                  >
+                    View diff
+                  </Link>
+                  <span className="text-[11.5px] text-[color:var(--color-fg-subtle)]">
+                    {formatRelative(f.createdAt.toISOString())}
+                  </span>
+                </div>
               </div>
             </li>
           ))}

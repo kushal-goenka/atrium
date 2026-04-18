@@ -6,12 +6,13 @@ import { upsertProviderAction, type UpsertProviderState } from "./actions";
 const INITIAL: UpsertProviderState = { ok: false };
 
 const PROVIDERS = [
-  { key: "anthropic", label: "Anthropic", baseHint: "", modelHint: "claude-sonnet-4-6" },
-  { key: "openai", label: "OpenAI", baseHint: "", modelHint: "gpt-4o-mini" },
-  { key: "azure-openai", label: "Azure OpenAI", baseHint: "https://{name}.openai.azure.com/openai/deployments/{id}", modelHint: "gpt-4o" },
-  { key: "gemini", label: "Google Gemini", baseHint: "", modelHint: "gemini-2.5-flash" },
-  { key: "litellm-proxy", label: "LiteLLM proxy", baseHint: "https://litellm.yourcompany.com", modelHint: "gpt-4o-mini" },
-  { key: "custom", label: "Custom (OpenAI-schema)", baseHint: "https://…", modelHint: "your-model" },
+  { key: "anthropic", label: "Anthropic", baseHint: "", modelHint: "claude-sonnet-4-6", local: false },
+  { key: "openai", label: "OpenAI", baseHint: "", modelHint: "gpt-4o-mini", local: false },
+  { key: "azure-openai", label: "Azure OpenAI", baseHint: "https://{name}.openai.azure.com/openai/deployments/{id}", modelHint: "gpt-4o", local: false },
+  { key: "gemini", label: "Google Gemini", baseHint: "", modelHint: "gemini-2.5-flash", local: false },
+  { key: "litellm-proxy", label: "LiteLLM proxy", baseHint: "https://litellm.yourcompany.com", modelHint: "gpt-4o-mini", local: false },
+  { key: "ollama", label: "Ollama (local)", baseHint: "http://ollama:11434/v1", modelHint: "llama3.2", local: true },
+  { key: "custom", label: "Custom (OpenAI-schema)", baseHint: "https://…", modelHint: "your-model", local: false },
 ];
 
 export function ProviderForm() {
@@ -66,14 +67,22 @@ export function ProviderForm() {
         ) : null}
       </Field>
 
-      <Field label="API key" hint="Encrypted at rest with your AUTH_SECRET.">
+      <Field
+        label="API key"
+        hint={
+          info.local
+            ? "Local providers (Ollama) run in your network and don't need a key — leave blank."
+            : "Encrypted at rest with your AUTH_SECRET."
+        }
+      >
         <input
           name="apiKey"
           type="password"
-          required
+          required={!info.local}
           autoComplete="off"
-          placeholder="sk-…"
-          className="h-10 w-full rounded-[var(--radius)] border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-3 font-mono text-[13px] focus:border-[color:var(--color-border-strong)] focus:outline-none"
+          placeholder={info.local ? "(not needed)" : "sk-…"}
+          disabled={info.local}
+          className="h-10 w-full rounded-[var(--radius)] border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)] px-3 font-mono text-[13px] focus:border-[color:var(--color-border-strong)] focus:outline-none disabled:opacity-60"
         />
         {state.fieldErrors?.apiKey ? <ErrorLine>{state.fieldErrors.apiKey}</ErrorLine> : null}
       </Field>

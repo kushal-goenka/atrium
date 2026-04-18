@@ -30,7 +30,7 @@ export async function GET() {
   );
 
   const body = {
-    name: `atrium@${brand.atriumHostname}`,
+    name: brand.orgName,
     owner: { name: brand.orgName, url: brand.orgUrl ?? undefined },
     plugins: approved.map((p) => ({
       name: p.slug,

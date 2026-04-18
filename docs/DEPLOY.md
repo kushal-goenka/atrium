@@ -198,6 +198,34 @@ and the magic-link flow will be disabled.
 
 ---
 
+## LLM providers (AI curation)
+
+Atrium's AI curation engine needs at least one LLM provider configured under
+Admin → LLM providers. You have three deployment shapes:
+
+1. **Hosted provider(s)** — Anthropic / OpenAI / Gemini API keys directly. Simplest.
+   Keys are AES-256-GCM encrypted at rest using a value derived from
+   `AUTH_SECRET`.
+
+2. **LiteLLM proxy** — if you already route LLM traffic through a centralized
+   LiteLLM deployment, register provider = `litellm-proxy`, `baseUrl = https://litellm.yourcompany.com`,
+   and your LiteLLM API key. Atrium speaks the OpenAI-compatible schema it expects.
+
+3. **Local-only (Ollama)** — for orgs that forbid plugin metadata from leaving
+   the cluster. Run Ollama as a sidecar (the compose profile is ready):
+
+   ```bash
+   docker compose --profile ollama up -d
+   docker compose exec ollama ollama pull llama3.2   # or qwen2.5:3b for <2GB
+   ```
+
+   Register provider = `ollama`, `baseUrl = http://ollama:11434/v1`,
+   `defaultModel = llama3.2`. The API-key field is disabled for local providers.
+
+All three shapes can coexist — Atrium uses the most-recently-updated enabled
+provider by default, and callers can request a specific provider via
+`preferredProvider` in `lib/ai/client.ts`.
+
 ## Observability (OpenTelemetry)
 
 Atrium exports OTLP traces when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. It
