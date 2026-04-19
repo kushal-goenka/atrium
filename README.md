@@ -112,6 +112,14 @@ docker compose up -d
 
 See [`docs/DEPLOY.md`](docs/DEPLOY.md) for Postgres, object storage, SSO, and OTEL configuration. For a hardened production deploy, walk the checklist in [`SECURITY.md`](SECURITY.md#hardening-checklist-for-operators).
 
+## Setting up Atrium for your org (AI-assisted)
+
+Point any coding agent (Claude Code, Cursor, etc.) at [`docs/AGENT-SETUP.md`](docs/AGENT-SETUP.md) — it's a 10-step, verification-gated playbook written for an agent to execute end-to-end. The agent collects inputs (org name, public URL, auth mode, LLM provider, hosting target) and produces a working deployment on Fly.io, Railway, Vercel, or Docker. Each step has an explicit success check; a failure stops the run with the exact error.
+
+Minimal kickoff prompt:
+
+> Read `docs/AGENT-SETUP.md` and set up Atrium for `<your org>`. Hosting target `fly`. Auth mode `admin-password`. LLM provider `ollama` with model `gemma3:4b`. Stop on any failure, surface the exact error.
+
 ## Use with Claude Code
 
 Once Atrium is running, point Claude Code at it:

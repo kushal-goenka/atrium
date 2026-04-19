@@ -1,15 +1,16 @@
 /**
  * Air-gap posture.
  *
- * When `ATRIUM_ALLOW_EXTERNAL_FETCH=false`, the server refuses any outbound
- * fetch that hasn't been explicitly allow-listed. Ingest still runs — but
- * only against sources the admin has pre-approved for inbound pulls, not
- * arbitrary URLs submitted via /admin/sources/new.
+ * When `ATRIUM_AIRGAP=strict`, the server refuses any outbound fetch.
+ * When `ATRIUM_AIRGAP=allowlist`, only hosts in `ATRIUM_ALLOWED_HOSTS`
+ * (exact or subdomain match) are reachable. Ingest still runs in both
+ * modes, but only against sources whose URLs satisfy the gate.
  *
  * Rationale: a regulated org points Atrium at an internal git mirror +
- * internal artifact storage, sets this flag, and from then on the registry
- * makes zero outbound calls. Clients (Claude Code, Codex, etc.) get their
- * plugins from Atrium's mirrored artifacts at `/mkt/plugins/<slug>/<ver>.tar.gz`.
+ * internal artifact storage, sets strict mode, and from then on the
+ * registry makes zero outbound calls. Clients (Claude Code, Codex, etc.)
+ * get their plugins from Atrium's mirrored artifacts at
+ * `/mkt/plugins/<slug>/<ver>.tar.gz` (signed artifact serving lands in v0.2).
  *
  * This module returns the current posture + helpers for guards.
  */
@@ -20,10 +21,6 @@ export function getAirgapMode(): AirgapMode {
   const raw = (process.env.ATRIUM_AIRGAP ?? "").toLowerCase();
   if (raw === "strict") return "strict";
   if (raw === "allowlist") return "allowlist";
-  // Legacy flag compatibility: ATRIUM_ALLOW_EXTERNAL_FETCH=false maps to strict.
-  if ((process.env.ATRIUM_ALLOW_EXTERNAL_FETCH ?? "true").toLowerCase() === "false") {
-    return "strict";
-  }
   return "open";
 }
 

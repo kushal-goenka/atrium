@@ -6,7 +6,7 @@ import {
   describeAirgap,
 } from "@/lib/airgap";
 
-const KEYS = ["ATRIUM_AIRGAP", "ATRIUM_ALLOW_EXTERNAL_FETCH", "ATRIUM_ALLOWED_HOSTS"];
+const KEYS = ["ATRIUM_AIRGAP", "ATRIUM_ALLOWED_HOSTS"];
 
 describe("air-gap", () => {
   const saved: Record<string, string | undefined> = {};
@@ -33,12 +33,6 @@ describe("air-gap", () => {
     process.env.ATRIUM_AIRGAP = "strict";
     expect(getAirgapMode()).toBe("strict");
     expect(() => assertOutboundAllowed("https://github.com/x/y")).toThrow(/strict/);
-  });
-
-  it("legacy ATRIUM_ALLOW_EXTERNAL_FETCH=false maps to strict", () => {
-    process.env.ATRIUM_ALLOW_EXTERNAL_FETCH = "false";
-    expect(getAirgapMode()).toBe("strict");
-    expect(() => assertOutboundAllowed("https://anywhere.test")).toThrow(/strict/);
   });
 
   it("allowlist mode accepts exact host + subdomain matches", () => {

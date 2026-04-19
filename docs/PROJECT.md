@@ -148,5 +148,5 @@ Add a new ADR whenever you make a decision that:
 
 ## Who's who
 
-- **Maintainer**: @kushal-goenka (GitHub). Listed as `kushalgoenka97@gmail.com` in the committer email for now.
+- **Maintainer**: [@kushal-goenka](https://github.com/kushal-goenka) on GitHub.
 - **Contributions welcome**: see `CONTRIBUTING.md`. Good first issues tagged `good-first-issue`.

@@ -20,7 +20,7 @@ Keep entries short. The commits are the ground truth; this index helps a future 
 
 ## 2026-04-18 — Session handoff infrastructure
 
-- Session owner: @kushal-goenka / Claude Opus 4.7 (1M context)
+- Session owner: @kushal-goenka
 - Shipped:
   - `CLAUDE.md` — briefing for any future Claude Code session
   - `docs/PROJECT.md` — living status + prioritized next-up list
@@ -35,7 +35,7 @@ Keep entries short. The commits are the ground truth; this index helps a future 
 
 ## 2026-04-18 — Public API, suggestions, user uploads, air-gap
 
-- Session owner: @kushal-goenka / Claude Opus 4.7
+- Session owner: @kushal-goenka
 - Shipped:
   - Full `/api/v1/*` surface with bearer-token auth, OpenAPI spec, rate limits
   - `/admin/tokens` admin UI to issue/revoke
@@ -48,7 +48,7 @@ Keep entries short. The commits are the ground truth; this index helps a future 
 
 ## 2026-04-18 — Logo redesign (A), de-brand, Ollama, fork diff
 
-- Session owner: @kushal-goenka / Claude Opus 4.7
+- Session owner: @kushal-goenka
 - Shipped:
   - New "A" mark across logo/wordmark/favicon/Logo component
   - De-branded marketplace names (owner = `ATRIUM_ORG_NAME`, not "atrium@host")
@@ -60,7 +60,7 @@ Keep entries short. The commits are the ground truth; this index helps a future 
 
 ## 2026-04-18 — Multi-provider + LLM vault + AI curation + pin/fork
 
-- Session owner: @kushal-goenka / Claude Opus 4.7
+- Session owner: @kushal-goenka
 - Shipped:
   - `PluginProvider` discriminator across Claude Code / OpenAI / Gemini / MCP / generic
   - Provider filter in browse
@@ -77,7 +77,7 @@ Keep entries short. The commits are the ground truth; this index helps a future 
 
 ## 2026-04-17 — v0.1.0-alpha foundation
 
-- Session owner: @kushal-goenka / Claude Opus 4.7
+- Session owner: @kushal-goenka
 - Shipped:
   - Initial public repo at `github.com/kushal-goenka/atrium`
   - Apache 2.0 with full docs (README, ARCHITECTURE, SECURITY, VISION, ROADMAP)

@@ -5,7 +5,7 @@
 
 ## Context
 
-Regulated orgs (finance, health, defense-adjacent) want atrium to make zero outbound network calls to hosts they haven't vetted. The naive approach is a boolean — `ATRIUM_ALLOW_EXTERNAL_FETCH=false` — which either blocks everything (making ingest impossible) or is too permissive. Real security postures have a middle ground: "outbound only to these hosts".
+Regulated orgs (finance, health, defense-adjacent) want atrium to make zero outbound network calls to hosts they haven't vetted. A boolean on/off switch either blocks everything (making ingest impossible) or is too permissive. Real security postures have a middle ground: "outbound only to these hosts".
 
 ## Decision
 
@@ -15,7 +15,7 @@ Atrium has three air-gap modes via `ATRIUM_AIRGAP`:
 - `allowlist` — outbound only to hosts in `ATRIUM_ALLOWED_HOSTS` (exact match or subdomain).
 - `strict` — no outbound at all; ingest must use pre-registered local sources.
 
-Ingest adapters (`lib/ingest/http.ts`, `lib/ingest/git.ts`) call `assertOutboundAllowed(url)` before opening a connection. The legacy `ATRIUM_ALLOW_EXTERNAL_FETCH=false` maps to `strict` for back-compat.
+Ingest adapters (`lib/ingest/http.ts`, `lib/ingest/git.ts`) call `assertOutboundAllowed(url)` before opening a connection.
 
 ## Consequences
 

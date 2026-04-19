@@ -22,9 +22,6 @@ const KIND_LABEL: Record<string, string> = {
   "capability-gap": "Capability gap",
   integration: "Integration",
   general: "Discussion",
-  // Legacy values still in DB — kept so pre-rename rows render sanely.
-  feature: "Atrium feature (legacy)",
-  bug: "Bug (legacy)",
 };
 
 export default async function SuggestionsPage({
