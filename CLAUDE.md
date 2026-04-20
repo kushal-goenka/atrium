@@ -52,14 +52,13 @@ Secondary (skim only):
 
 Skim this to avoid being surprised.
 
-**Fully working end-to-end**: browse, plugin detail, search/filter, admin dashboard, add source, sync source (real git clone + http fetch), pin + fork + diff view, AI curation (calls real LLM via configured provider), LLM provider vault (AES-256-GCM encrypted), multi-client install matrix, user switcher + profile pages, optional auth modes, public `/api/v1` endpoints, suggestions forum with voting, user-contributed skill uploads with admin review, air-gap posture, `/api/health`.
+**Fully working end-to-end**: browse, plugin detail, search/filter, admin dashboard, add source, sync source (real git clone + http fetch), pin + fork + diff view, AI curation (calls real LLM via configured provider), LLM provider vault (AES-256-GCM encrypted), multi-client install matrix, user switcher + profile pages, optional auth modes, public `/api/v1` endpoints, suggestions forum with voting, user-contributed skill uploads with admin review (approved uploads mirror into the catalog under the `user-contributions` source), air-gap posture, `/api/health`, **DB-backed plugin catalog** (`lib/plugins-repo.ts`), **install telemetry** (copy-command writes `Install` rows, user profile activity reads them back).
 
 **Intentionally stubbed** (will confuse you if you forget):
-- **Plugins are a static fixture** in [`data/plugins.ts`](data/plugins.ts) — not yet DB-backed. `PluginOverride` merges in via [`lib/overrides.ts`](lib/overrides.ts). Migration is planned in v0.1.x.
 - **User identity is mocked** ([`lib/users.ts`](lib/users.ts)). The "acting as" switcher sets a cookie; there's no real auth except `admin-password` mode for `/admin/*`. SSO arrives in v0.2.
-- **Install telemetry is not wired** — the `Install` Prisma model exists but we don't record rows on copy-command clicks (needs plugin-DB migration first so the FK is real).
 - **Scanners are declarative** — the `SecuritySignal` rows come from the seed fixture. Real scanners arrive in v0.4.
 - **OTEL export** — configured via env vars but no actual spans emitted yet (v0.3).
+- **`PluginVersion.manifest` blobs** only populate on the *latest* version; historical versions get `"{}"` until real git ingest writes historical manifests. Harmless for UI (detail page shows current version) but worth knowing for any feature that wants to diff across versions.
 
 When you finish a piece of stubbed work, **remove the stub note from this section** in the same commit.
 

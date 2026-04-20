@@ -18,6 +18,24 @@ Keep entries short. The commits are the ground truth; this index helps a future 
 
 ---
 
+## 2026-04-20 — v0.1.x stub closure: plugin-DB migration + install telemetry + user-contrib surface
+
+- Session owner: @kushal-goenka
+- Shipped:
+  - Plugins migrated off the static fixture: `data/plugins.ts` → `prisma/fixtures/plugins.ts`, `lib/plugins-repo.ts` reads DB rows, seed populates 12 plugins + 22 versions + 7 signals
+  - `Plugin` schema gets `provider`, `version`, `usageJson`, `forkedFromJson`, `authorUrl` columns
+  - All 10 callers (browse / detail / sources / admin / mkt / api v1 / curation / pin-fork / fork-diff / profile) now read from `plugins-repo`
+  - Install telemetry: `recordInstallIntentAction(slug, version, clientType)` writes real `Install` rows; InstallPanel fires it on any copy-install; user profile activity reads the last 10 installs per user
+  - Approved `UploadedSkill` rows now mirror into Plugin + PluginVersion under an auto-created `user-contributions` internal source; rejection removes the mirror
+  - Three CLAUDE.md/PROJECT.md stubs closed in the same commit
+- Earlier in the session (separate commit 1b9762b): four interactive setup skills (`atrium-setup-org`, `atrium-setup-dev`, `atrium-add-provider`, `atrium-diagnose`), `.claude-plugin/marketplace.json` self-publishing, auth-gap issue #6
+- Earlier (commit 5b1b935): dropped `ATRIUM_ALLOW_EXTERNAL_FETCH` legacy env + legacy KIND_LABEL, scrubbed internal metadata, wrote `docs/AGENT-SETUP.md`
+- Cheap hosting: `docs/DEMO.md` now has a 5-option cost matrix + Fly.io command sequence for a $0 demo
+- Commits: 0a54ab0, 1b9762b, 5b1b935, 8d9c6b2
+- Tests: 93 unit / 24 e2e (unchanged)
+- Stubs removed: plugin-DB migration, install telemetry, user-contribution surface
+- Next up: start v0.2 — SSO (NextAuth OIDC + SAML) per issue #3, then signed artifact serving per #4
+
 ## 2026-04-18 — Session handoff infrastructure
 
 - Session owner: @kushal-goenka

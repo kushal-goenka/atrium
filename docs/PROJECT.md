@@ -68,13 +68,11 @@ The alpha ships these features end-to-end. If a feature is here, it works and ha
 
 These are intentional shortcuts — will confuse you if you forget they're in place.
 
-1. **Plugins live in `data/plugins.ts`, not Prisma.** `hydratePlugins()` merges `PluginOverride` on top of the static fixture. Migrating plugins to DB is the first piece of v0.1.x.
-2. **User identity is mocked.** `MOCK_USERS` in `lib/users.ts`. Current user comes from a cookie (`atrium-acting-as`). `admin-password` mode gates `/admin/*` via middleware but doesn't associate sessions with any user row.
-3. **Install telemetry is not persisted.** The `Install` Prisma model exists but no code creates rows. Plugin-DB migration unblocks this.
-4. **Security scanners are declarative.** `SecuritySignal` rows in the fixture. No real static-analysis pass.
-5. **OTEL export** — env-configured but no spans emitted. Instrumentation needed on all `fetch` + `prisma` calls.
-6. **Four-eyes approval** — `ATRIUM_FOUR_EYES` env exists but there's no gate implementation.
-7. **User-contribution source** — approved uploads persist in `UploadedSkill` but don't show up in the browse catalog yet (needs the plugin-DB migration to have a proper `Source` row they hang off).
+1. **User identity is mocked.** `MOCK_USERS` in `lib/users.ts`. Current user comes from a cookie (`atrium-acting-as`). `admin-password` mode gates `/admin/*` via middleware but doesn't associate sessions with any user row. SSO is the v0.2 feature that retires this (issue #3).
+2. **Security scanners are declarative.** `SecuritySignal` rows in the seed fixture. No real static-analysis pass. Runtime scanners land in v0.4.
+3. **OTEL export** — env-configured but no spans emitted. Instrumentation needed on all `fetch` + `prisma` calls in v0.3 (issue #5).
+4. **Four-eyes approval** — `ATRIUM_FOUR_EYES` env exists but there's no gate implementation.
+5. **`PluginVersion.manifest` blobs** only populate on the *latest* version. Historical versions get an empty `"{}"` blob until a real git-ingest replay writes manifests for every tag. Harmless for the UI, matters for any future cross-version feature.
 
 When you finish any of these, remove the line in the same commit.
 
@@ -86,10 +84,11 @@ The ordering is opinionated. Pick from the top. If you pick out of order, put a 
 
 ### v0.1.x — close the stubs (highest priority)
 
-1. **Plugin-DB migration.** Move `data/plugins.ts` fixture into `Plugin` + `PluginVersion` rows. Seed script. `hydratePlugins()` becomes a pure DB read. Unblocks: real install telemetry, user-contribution publishing, scanner output per plugin.
-2. **Install event recording.** Hook into the copy-install button + the `/mkt/plugins/…` fetch (when that ships) to write `Install` rows. Update `/users/[id]` activity feed to read real rows.
-3. **User-contribution source surface.** When a curator approves an `UploadedSkill`, mirror it into the catalog under a `user-contributions` source so it shows up in browse.
-4. **Delete the "stubbed" callouts in CLAUDE.md + PROJECT.md** for each item as it lands.
+All three original v0.1.x items landed 2026-04-20 (commit 0a54ab0). Remaining follow-ups:
+
+1. **Historical manifest blobs.** Currently only the latest `PluginVersion.manifest` is populated; prior versions get `"{}"`. When real git ingest lands, replay each tag and write the manifest at that tag. Issue: (not yet filed — small, file if needed).
+2. **Fixture-based scanner signals → real scanners.** Today `SecuritySignal` rows come from the seed fixture. v0.4 scanner framework replaces this.
+3. **Seed script should also seed suggestions + a couple of uploaded skills** so the public demo instance shows the forum and the user-contributions source already populated. Tracked informally here.
 
 ### v0.2 — SSO + artifact serving + policy enforcement
 
