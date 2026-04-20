@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { findPlugin } from "@/data/plugins";
+import { findPluginBySlug } from "@/lib/plugins-repo";
 import { diffPlugins } from "@/lib/diff";
 import { Badge } from "@/components/badge";
 import { formatRelative } from "@/lib/utils";
@@ -24,7 +24,7 @@ export default async function ForkDiffPage(
     snapshot = null;
   }
 
-  const upstream = findPlugin(fork.upstreamSlug);
+  const upstream = await findPluginBySlug(fork.upstreamSlug);
   const changes =
     snapshot && upstream ? diffPlugins(snapshot, upstream) : [];
 

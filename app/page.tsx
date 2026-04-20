@@ -1,20 +1,21 @@
 import { Suspense } from "react";
-import { plugins as staticPlugins } from "@/data/plugins";
 import { Catalog } from "@/components/catalog";
 import { formatRelative } from "@/lib/utils";
 import { getBranding } from "@/lib/branding";
 import { listAllSources } from "@/lib/sources";
+import { listAllPlugins } from "@/lib/plugins-repo";
 import { hydratePlugins } from "@/lib/overrides";
 
-// Reads from DB (sources + overrides) — can't prerender at build.
+// Reads from DB — can't prerender at build.
 export const dynamic = "force-dynamic";
 
 export default async function BrowsePage() {
   const brand = getBranding();
-  const [sources, plugins] = await Promise.all([
+  const [sources, rawPlugins] = await Promise.all([
     listAllSources(),
-    hydratePlugins(staticPlugins),
+    listAllPlugins(),
   ]);
+  const plugins = await hydratePlugins(rawPlugins);
 
   const mostRecent = plugins.reduce<string>(
     (acc, p) => (p.updatedAt > acc ? p.updatedAt : acc),

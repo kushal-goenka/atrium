@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { plugins } from "@/data/plugins";
 import { listAllSources } from "@/lib/sources";
+import { listAllPlugins } from "@/lib/plugins-repo";
 import { Badge } from "@/components/badge";
 import { SyncSourceButton } from "@/components/sync-source-button";
 import { SourceSnapshots } from "@/components/source-snapshots";
@@ -10,7 +10,7 @@ export const metadata = { title: "Sources" };
 export const dynamic = "force-dynamic";
 
 export default async function SourcesPage() {
-  const sources = await listAllSources();
+  const [sources, plugins] = await Promise.all([listAllSources(), listAllPlugins()]);
 
   return (
     <div>

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { currentUser, findUser, MOCK_USERS } from "@/lib/users";
-import { plugins as staticPlugins } from "@/data/plugins";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/badge";
 import { formatRelative } from "@/lib/utils";
@@ -21,14 +20,23 @@ export async function generateMetadata(
   return u ? { title: u.name } : {};
 }
 
-// Deterministic "pretend" activity so the profile page isn't empty before
-// real install telemetry lands.
-function activityFor(userId: string) {
-  const hash = Array.from(userId).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 0);
-  const count = 3 + (hash % 4);
-  return staticPlugins.slice(hash % 4, (hash % 4) + count).map((p, i) => ({
-    plugin: p,
-    at: new Date(Date.now() - ((i + 1) * 24 * 3600 * 1000 * (1 + (hash % 3)))).toISOString(),
+/**
+ * Real install history from the Install table. Returns the most recent N
+ * rows for this user, joined with the plugin rows so we can render the
+ * plugin name + version without a second query.
+ */
+async function recentInstallsFor(userId: string) {
+  const rows = await prisma.install.findMany({
+    where: { userId },
+    orderBy: { issuedAt: "desc" },
+    take: 10,
+    include: { plugin: { select: { slug: true, name: true, provider: true } } },
+  });
+  return rows.map((r) => ({
+    plugin: r.plugin,
+    version: r.version,
+    clientType: r.clientType,
+    at: r.issuedAt.toISOString(),
   }));
 }
 
@@ -45,15 +53,15 @@ export default async function UserPage(
   const { id } = await params;
   const user = findUser(id);
   if (!user) return notFound();
-  const [me, uploads] = await Promise.all([
+  const [me, uploads, activity] = await Promise.all([
     currentUser(),
     prisma.uploadedSkill.findMany({
       where: { uploadedBy: user.id },
       orderBy: { createdAt: "desc" },
     }),
+    recentInstallsFor(user.id),
   ]);
   const isSelf = me.id === user.id;
-  const activity = activityFor(user.id);
 
   return (
     <div>
@@ -92,32 +100,37 @@ export default async function UserPage(
       <section className="mt-8">
         <h2 className="mb-2 text-[14px] font-semibold tracking-tight">Recent activity</h2>
         <p className="mb-3 text-[12px] text-[color:var(--color-fg-subtle)]">
-          Install events recorded against this identity. Real telemetry replaces this feed when
-          the <code className="font-mono">Install</code> model is wired up.
+          Most recent install events recorded for this identity.
         </p>
-        <ul className="divide-y divide-[color:var(--color-border)] rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)]">
-          {activity.map((a, i) => (
-            <li key={i} className="flex items-center justify-between gap-3 px-4 py-3">
-              <div className="min-w-0">
-                <Link
-                  href={`/plugins/${a.plugin.slug}`}
-                  className="truncate text-[13.5px] font-medium hover:underline"
-                >
-                  {a.plugin.name}{" "}
-                  <span className="font-mono text-[11.5px] text-[color:var(--color-fg-subtle)]">
-                    {a.plugin.version}
-                  </span>
-                </Link>
-                <p className="mt-0.5 text-[11.5px] text-[color:var(--color-fg-subtle)]">
-                  installed via {a.plugin.provider === "openai" ? "ChatGPT" : a.plugin.provider === "gemini" ? "Gemini" : "Claude Code"}
-                </p>
-              </div>
-              <span className="shrink-0 font-mono text-[11.5px] text-[color:var(--color-fg-subtle)]">
-                {formatRelative(a.at)}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {activity.length === 0 ? (
+          <div className="rounded-[var(--radius-lg)] border border-dashed border-[color:var(--color-border-strong)] px-6 py-8 text-center text-[13px] text-[color:var(--color-fg-subtle)]">
+            No install events yet.
+          </div>
+        ) : (
+          <ul className="divide-y divide-[color:var(--color-border)] rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-bg-elev)]">
+            {activity.map((a, i) => (
+              <li key={i} className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <Link
+                    href={`/plugins/${a.plugin.slug}`}
+                    className="truncate text-[13.5px] font-medium hover:underline"
+                  >
+                    {a.plugin.name}{" "}
+                    <span className="font-mono text-[11.5px] text-[color:var(--color-fg-subtle)]">
+                      {a.version}
+                    </span>
+                  </Link>
+                  <p className="mt-0.5 text-[11.5px] text-[color:var(--color-fg-subtle)]">
+                    via {a.clientType ?? (a.plugin.provider === "openai" ? "ChatGPT" : a.plugin.provider === "gemini" ? "Gemini" : "Claude Code")}
+                  </p>
+                </div>
+                <span className="shrink-0 font-mono text-[11.5px] text-[color:var(--color-fg-subtle)]">
+                  {formatRelative(a.at)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="mt-8">

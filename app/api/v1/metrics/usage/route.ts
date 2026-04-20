@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { plugins as staticPlugins } from "@/data/plugins";
+import { listAllPlugins } from "@/lib/plugins-repo";
 import { hydratePlugins } from "@/lib/overrides";
 import { verifyBearer, requireScope } from "@/lib/api-auth";
 import { limit, clientKey, rateLimitHeaders } from "@/lib/rate-limit";
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: denied }, { status: 401, headers: rateLimitHeaders(rl) });
   }
 
-  const plugins = await hydratePlugins(staticPlugins);
+  const plugins = await hydratePlugins(await listAllPlugins());
   const approved = plugins.filter((p) => p.policyState === "approved");
 
   const totals = approved.reduce(

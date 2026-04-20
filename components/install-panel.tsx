@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Plugin } from "@/lib/types";
 import { INSTALL_TARGETS, targetsForProvider } from "@/lib/install-targets";
+import { recordInstallIntentAction } from "@/app/plugins/[slug]/install-actions";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -61,7 +62,13 @@ export function InstallPanel({ plugin, hostname, orgName }: Props) {
 
       <div className="mt-3 space-y-2">
         {install.map((cmd, i) => (
-          <Block key={i} cmd={cmd} />
+          <Block
+            key={i}
+            cmd={cmd}
+            onCopied={() => {
+              recordInstallIntentAction(plugin.slug, plugin.pinnedVersion ?? plugin.version, `web-copy:${target.key}`);
+            }}
+          />
         ))}
       </div>
 
@@ -72,7 +79,13 @@ export function InstallPanel({ plugin, hostname, orgName }: Props) {
   );
 }
 
-function Block({ cmd }: { cmd: { kind: "shell" | "slash" | "json"; label: string; body: string; file?: string } }) {
+function Block({
+  cmd,
+  onCopied,
+}: {
+  cmd: { kind: "shell" | "slash" | "json"; label: string; body: string; file?: string };
+  onCopied?: () => void;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -80,6 +93,7 @@ function Block({ cmd }: { cmd: { kind: "shell" | "slash" | "json"; label: string
       await navigator.clipboard.writeText(cmd.body);
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
+      onCopied?.();
     } catch {
       /* silent */
     }

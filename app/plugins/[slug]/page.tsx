@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { findPlugin, findSource, plugins } from "@/data/plugins";
 import { Badge } from "@/components/badge";
 import { FlagForRescan } from "@/components/flag-for-rescan";
 import { InstallPanel } from "@/components/install-panel";
@@ -10,20 +9,18 @@ import { PinForkPanel } from "@/components/pin-fork-panel";
 import { formatNumber, formatRelative } from "@/lib/utils";
 import { getBranding } from "@/lib/branding";
 import { hydratePlugins } from "@/lib/overrides";
+import { findPluginBySlug } from "@/lib/plugins-repo";
+import { findSourceByKey } from "@/lib/sources";
 import { PROVIDER_LABELS, type SecuritySignal } from "@/lib/types";
 
-// Reads from DB to hydrate overrides.
+// Reads from DB.
 export const dynamic = "force-dynamic";
-
-export function generateStaticParams() {
-  return plugins.map((p) => ({ slug: p.slug }));
-}
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> },
 ): Promise<Metadata> {
   const { slug } = await params;
-  const plugin = findPlugin(slug);
+  const plugin = await findPluginBySlug(slug);
   if (!plugin) return {};
   return {
     title: plugin.name,
@@ -42,11 +39,11 @@ export default async function PluginDetail(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const staticPlugin = findPlugin(slug);
-  if (!staticPlugin) return notFound();
-  const [plugin] = await hydratePlugins([staticPlugin]);
+  const raw = await findPluginBySlug(slug);
+  if (!raw) return notFound();
+  const [plugin] = await hydratePlugins([raw]);
   if (!plugin) return notFound();
-  const source = findSource(plugin.sourceId);
+  const source = await findSourceByKey(plugin.sourceId);
   const brand = getBranding();
 
   const trustLabel =

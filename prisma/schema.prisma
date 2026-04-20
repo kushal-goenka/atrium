@@ -104,14 +104,23 @@ model Plugin {
   source       Source           @relation(fields: [sourceId], references: [id], onDelete: Cascade)
   slug         String
   name         String
+  /// Provider discriminator: "claude-code" | "openai" | "gemini" | "mcp" | "generic"
+  provider     String           @default("claude-code")
+  version      String           @default("0.1.0")
   category     String
   description  String
   authorName   String?
   authorEmail  String?
+  authorUrl    String?
   homepage     String?
   license      String?
   keywords     String
   policyState  String           @default("quarantined")
+  /// Denormalized UsageSnapshot for the alpha. Real aggregation lands in v0.3
+  /// via UsageDaily; this field becomes derived then. JSON-encoded.
+  usageJson    String?
+  /// Forked provenance, JSON-encoded `{sourceId, slug, atVersion}` if applicable.
+  forkedFromJson String?
   updatedAt    DateTime         @updatedAt
   createdAt    DateTime         @default(now())
 
@@ -122,6 +131,7 @@ model Plugin {
 
   @@unique([sourceId, slug])
   @@index([policyState])
+  @@index([slug])
 }
 
 model PluginVersion {

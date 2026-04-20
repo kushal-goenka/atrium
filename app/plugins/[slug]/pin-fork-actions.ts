@@ -2,14 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { findPlugin } from "@/data/plugins";
+import { findPluginBySlug } from "@/lib/plugins-repo";
 import { pluginKey, setOverride } from "@/lib/overrides";
 
 export async function pinVersionAction(
   slug: string,
   version: string | null,
 ): Promise<{ ok: boolean; error?: string }> {
-  const plugin = findPlugin(slug);
+  const plugin = await findPluginBySlug(slug);
   if (!plugin) return { ok: false, error: "plugin not found" };
 
   // Allow pinning to null (i.e. unpinning).
@@ -47,7 +47,7 @@ export async function forkPluginAction(
   slug: string,
   opts: { internalSourceKey: string; note?: string },
 ): Promise<{ ok: boolean; forkKey?: string; error?: string }> {
-  const plugin = findPlugin(slug);
+  const plugin = await findPluginBySlug(slug);
   if (!plugin) return { ok: false, error: "plugin not found" };
   if (plugin.sourceId === opts.internalSourceKey) {
     return { ok: false, error: "already in the internal source" };

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { findPlugin } from "@/data/plugins";
+import { findPluginBySlug } from "@/lib/plugins-repo";
 import { prisma } from "@/lib/prisma";
 import { suggestCuration } from "@/lib/ai/curation";
 import { pluginKey, setOverride } from "@/lib/overrides";
@@ -17,7 +17,7 @@ export interface SuggestResult {
 }
 
 export async function suggestCurationAction(slug: string): Promise<SuggestResult> {
-  const plugin = findPlugin(slug);
+  const plugin = await findPluginBySlug(slug);
   if (!plugin) return { ok: false, error: "plugin not found" };
 
   try {
@@ -48,7 +48,7 @@ export async function applyCurationAction(
   category: string,
   keywords: string[],
 ): Promise<{ ok: boolean; error?: string }> {
-  const plugin = findPlugin(slug);
+  const plugin = await findPluginBySlug(slug);
   if (!plugin) return { ok: false, error: "plugin not found" };
 
   try {

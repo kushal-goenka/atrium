@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { plugins as staticPlugins } from "@/data/plugins";
+import { listAllPlugins } from "@/lib/plugins-repo";
 import { hydratePlugins } from "@/lib/overrides";
 import { verifyBearer, requireScope } from "@/lib/api-auth";
 import { limit, clientKey, rateLimitHeaders } from "@/lib/rate-limit";
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
   const source = url.searchParams.get("source");
   const q = (url.searchParams.get("q") ?? "").trim().toLowerCase();
 
-  const hydrated = await hydratePlugins(staticPlugins);
+  const hydrated = await hydratePlugins(await listAllPlugins());
 
   const filtered = hydrated.filter((p) => {
     if (p.policyState !== "approved") return false;
@@ -72,8 +72,7 @@ export async function GET(req: Request) {
   );
 }
 
-function shape(p: ReturnType<typeof staticPlugins.at> extends infer T ? T : never) {
-  if (!p) return null;
+function shape(p: Awaited<ReturnType<typeof listAllPlugins>>[number]) {
   return {
     slug: p.slug,
     name: p.name,

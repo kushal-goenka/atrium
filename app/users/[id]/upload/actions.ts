@@ -106,6 +106,18 @@ export async function reviewUploadedSkillAction(
       where: { id },
       data: { policyState: decision },
     });
+
+    // On approval, mirror the upload into the catalog under the
+    // "user-contributions" source so it appears alongside federated plugins.
+    // The UploadedSkill row stays as the authoritative authoring record;
+    // the Plugin row is a rendering of it.
+    if (decision === "approved") {
+      await mirrorApprovedUploadToCatalog(updated);
+    } else {
+      // On rejection, remove any previously-approved catalog mirror.
+      await removeMirrorIfExists(updated.slug);
+    }
+
     await prisma.auditLog
       .create({
         data: {
@@ -118,11 +130,104 @@ export async function reviewUploadedSkillAction(
       })
       .catch(() => {});
     revalidatePath("/admin/uploads");
+    revalidatePath("/");
     revalidatePath(`/users/${updated.uploadedBy}`);
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
+}
+
+/**
+ * Mirrors an approved UploadedSkill into the Plugin catalog under the
+ * built-in `user-contributions` source. Ensures the source exists on first
+ * approval. The skill's markdown body becomes the plugin's single skill;
+ * commands/agents/hooks/mcp are all empty.
+ */
+async function mirrorApprovedUploadToCatalog(upload: {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  body: string;
+  category: string;
+  keywords: string;
+  version: string;
+  uploadedBy: string;
+  uploaderName: string | null;
+}) {
+  const source = await prisma.source.upsert({
+    where: { key: "user-contributions" },
+    create: {
+      key: "user-contributions",
+      name: "User contributions",
+      kind: "local",
+      trust: "internal",
+    },
+    update: {},
+  });
+
+  const manifestJson = JSON.stringify({
+    commands: [],
+    agents: [],
+    skills: [
+      {
+        name: upload.slug,
+        description: upload.description,
+        // The SKILL.md body is the contribution. Store it alongside the
+        // manifest so clients can resolve it without a second round trip.
+        body: upload.body,
+      },
+    ],
+    hooks: [],
+    mcpServers: [],
+  });
+
+  const plugin = await prisma.plugin.upsert({
+    where: { sourceId_slug: { sourceId: source.id, slug: upload.slug } },
+    create: {
+      sourceId: source.id,
+      slug: upload.slug,
+      name: upload.name,
+      provider: "generic",
+      version: upload.version,
+      category: upload.category,
+      description: upload.description,
+      authorName: upload.uploaderName ?? upload.uploadedBy,
+      keywords: upload.keywords,
+      policyState: "approved",
+    },
+    update: {
+      name: upload.name,
+      version: upload.version,
+      category: upload.category,
+      description: upload.description,
+      authorName: upload.uploaderName ?? upload.uploadedBy,
+      keywords: upload.keywords,
+      policyState: "approved",
+    },
+  });
+
+  await prisma.pluginVersion.upsert({
+    where: { pluginId_version: { pluginId: plugin.id, version: upload.version } },
+    create: {
+      pluginId: plugin.id,
+      version: upload.version,
+      releasedAt: new Date(),
+      manifest: manifestJson,
+    },
+    update: {
+      manifest: manifestJson,
+    },
+  });
+}
+
+async function removeMirrorIfExists(slug: string) {
+  const source = await prisma.source.findUnique({ where: { key: "user-contributions" } });
+  if (!source) return;
+  await prisma.plugin
+    .deleteMany({ where: { sourceId: source.id, slug } })
+    .catch(() => {});
 }
 
 async function uniqueSlug(base: string): Promise<string> {

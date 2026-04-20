@@ -1,24 +1,24 @@
 import { prisma } from "./prisma";
 import type { Source } from "./types";
-import { plugins } from "@/data/plugins";
-
-/**
- * Count of plugins observed for each source. Will be replaced by a DB query
- * once plugins migrate off the static fixture in v0.1.x.
- */
-function pluginCountFor(sourceKey: string): number {
-  return plugins.filter((p) => p.sourceId === sourceKey).length;
-}
 
 /**
  * All sources visible to the catalog, oldest-first so the built-in seed
- * rows (official → verified → internal) always lead regardless of when
- * user-added sources appeared.
+ * rows always lead regardless of when user-added sources appeared.
+ *
+ * `pluginCount` is computed with a single grouped query after the source
+ * list is loaded.
  */
 export async function listAllSources(): Promise<Source[]> {
-  const rows = await prisma.source.findMany({
-    orderBy: { createdAt: "asc" },
-  });
+  const [rows, counts] = await Promise.all([
+    prisma.source.findMany({ orderBy: { createdAt: "asc" } }),
+    prisma.plugin.groupBy({
+      by: ["sourceId"],
+      _count: { _all: true },
+    }),
+  ]);
+
+  const countBySourceId = new Map<string, number>();
+  for (const c of counts) countBySourceId.set(c.sourceId, c._count._all);
 
   return rows.map((row) => ({
     id: row.key,
@@ -27,8 +27,24 @@ export async function listAllSources(): Promise<Source[]> {
     url: row.url ?? undefined,
     trust: (row.trust as Source["trust"]) ?? "community",
     lastSyncedAt: row.updatedAt.toISOString(),
-    pluginCount: pluginCountFor(row.key),
+    pluginCount: countBySourceId.get(row.id) ?? 0,
   }));
+}
+
+/** Look up a single source by its key (the stable external id). */
+export async function findSourceByKey(key: string): Promise<Source | undefined> {
+  const row = await prisma.source.findUnique({ where: { key } });
+  if (!row) return undefined;
+  const count = await prisma.plugin.count({ where: { sourceId: row.id } });
+  return {
+    id: row.key,
+    name: row.name,
+    kind: (row.kind as Source["kind"]) ?? "http",
+    url: row.url ?? undefined,
+    trust: (row.trust as Source["trust"]) ?? "community",
+    lastSyncedAt: row.updatedAt.toISOString(),
+    pluginCount: count,
+  };
 }
 
 export interface NewSourceInput {

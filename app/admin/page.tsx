@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { plugins } from "@/data/plugins";
 import { listAllSources } from "@/lib/sources";
+import { listAllPlugins } from "@/lib/plugins-repo";
 import { Badge } from "@/components/badge";
 import { formatNumber, formatRelative } from "@/lib/utils";
 import { ApprovalActions } from "@/components/approval-actions";
@@ -19,7 +19,7 @@ const auditLog = [
 ];
 
 export default async function AdminDashboard() {
-  const sources = await listAllSources();
+  const [sources, plugins] = await Promise.all([listAllSources(), listAllPlugins()]);
   const airgap = describeAirgap();
   const quarantined = plugins.filter((p) => p.policyState === "quarantined");
   const highSignals = plugins.filter((p) => p.signals.some((s) => s.severity === "high"));

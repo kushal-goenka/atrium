@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { findPlugin } from "@/data/plugins";
+import { findPluginBySlug } from "@/lib/plugins-repo";
 import { hydratePlugins } from "@/lib/overrides";
 import { verifyBearer, requireScope } from "@/lib/api-auth";
 import { limit, clientKey, rateLimitHeaders } from "@/lib/rate-limit";
@@ -38,7 +38,7 @@ export async function GET(
   }
 
   const { slug } = await params;
-  const base = findPlugin(slug);
+  const base = await findPluginBySlug(slug);
   if (!base) {
     return NextResponse.json(
       { error: "plugin not found" },

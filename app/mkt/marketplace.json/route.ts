@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { plugins as staticPlugins } from "@/data/plugins";
+import { listAllPlugins } from "@/lib/plugins-repo";
 import { getBranding } from "@/lib/branding";
 import { hydratePlugins } from "@/lib/overrides";
 
@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   const brand = getBranding();
-  const plugins = await hydratePlugins(staticPlugins);
+  const plugins = await hydratePlugins(await listAllPlugins());
 
   // Only Claude Code-compatible plugins (commands/agents/skills/hooks/mcp) go in
   // this endpoint's output; OpenAI/Gemini plugins are fetched by their own
