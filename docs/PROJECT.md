@@ -52,8 +52,13 @@ The alpha ships these features end-to-end. If a feature is here, it works and ha
 - Docker Compose with optional `ollama` + `otel-collector` profiles
 - Fork snapshot history (MarketplaceSnapshot rows)
 
+### Onboarding surface
+- `docs/AGENT-SETUP.md` non-interactive playbook (10 steps, each with a verification check)
+- `skills/` directory — four interactive SKILL.md files that turn ops into Q&A flows: `atrium-setup-org`, `atrium-setup-dev`, `atrium-add-provider`, `atrium-diagnose`
+- `.claude-plugin/marketplace.json` + `.claude-plugin/plugin.json` — Atrium publishes itself as an installable marketplace; `/plugin install atrium-ops` loads the four skills into any Claude Code session
+
 ### Testing & CI
-- 94 unit tests (vitest) across utils, branding, sources, manifest, crypto, git, http, api-auth, rate-limit, airgap, diff, actions
+- 93 unit tests (vitest) across utils, branding, sources, manifest, crypto, git, http, api-auth, rate-limit, airgap, diff, actions
 - 24 e2e tests (playwright) across browse, detail, admin, add-source, theme, filters, mkt endpoint, health
 - GitHub Actions: typecheck + unit + build → gated e2e job
 

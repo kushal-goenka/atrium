@@ -1,0 +1,24 @@
+{
+  "$comment": "Atrium publishes itself as an installable Claude Code marketplace. Point Claude Code at this repo (`/plugin marketplace add https://github.com/kushal-goenka/atrium`) and the ops plugin below appears in the catalog — the same registry Atrium serves to its own users.",
+  "name": "atrium-ops",
+  "owner": {
+    "name": "Atrium Contributors",
+    "url": "https://github.com/kushal-goenka/atrium"
+  },
+  "plugins": [
+    {
+      "name": "atrium-ops",
+      "source": "./",
+      "description": "Interactive skills for provisioning, diagnosing, and managing Atrium deployments. Install once and your agent can walk you through org setup, local dev bootstrap, LLM provider configuration, and runtime health diagnosis.",
+      "version": "0.1.0",
+      "category": "ops",
+      "author": {
+        "name": "Atrium Contributors",
+        "url": "https://github.com/kushal-goenka/atrium"
+      },
+      "keywords": ["atrium", "ops", "setup", "deploy", "diagnose", "provisioning"],
+      "homepage": "https://github.com/kushal-goenka/atrium/tree/main/skills",
+      "license": "Apache-2.0"
+    }
+  ]
+}

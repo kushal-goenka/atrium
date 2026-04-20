@@ -114,7 +114,29 @@ See [`docs/DEPLOY.md`](docs/DEPLOY.md) for Postgres, object storage, SSO, and OT
 
 ## Setting up Atrium for your org (AI-assisted)
 
-Point any coding agent (Claude Code, Cursor, etc.) at [`docs/AGENT-SETUP.md`](docs/AGENT-SETUP.md) — it's a 10-step, verification-gated playbook written for an agent to execute end-to-end. The agent collects inputs (org name, public URL, auth mode, LLM provider, hosting target) and produces a working deployment on Fly.io, Railway, Vercel, or Docker. Each step has an explicit success check; a failure stops the run with the exact error.
+Two paths, depending on how you want your agent to drive.
+
+### Option A — interactive skills (recommended)
+
+Install Atrium's own ops plugin into Claude Code. Your agent then walks you through setup via Q&A:
+
+```
+/plugin marketplace add https://github.com/kushal-goenka/atrium
+/plugin install atrium-ops
+```
+
+Say one of:
+
+- *"Set up Atrium for my org"* → [`atrium-setup-org`](skills/atrium-setup-org/SKILL.md) asks about org, hosting, auth, DB, LLM provider, air-gap, initial sources, confirms the plan, executes each step with verification.
+- *"Get Atrium running locally"* → [`atrium-setup-dev`](skills/atrium-setup-dev/SKILL.md) zero-prompt local dev bootstrap.
+- *"Add an LLM provider to Atrium"* → [`atrium-add-provider`](skills/atrium-add-provider/SKILL.md) picks a provider, collects the key, tests it.
+- *"Check if Atrium is healthy"* → [`atrium-diagnose`](skills/atrium-diagnose/SKILL.md) runs an 8-check diagnostic and produces a paste-ready report.
+
+Full list + contribution guide: [`skills/README.md`](skills/README.md). (Atrium publishes itself as a marketplace via [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) — the ops plugin is self-hosted dogfood of the registry.)
+
+### Option B — non-interactive playbook
+
+Point any coding agent at [`docs/AGENT-SETUP.md`](docs/AGENT-SETUP.md) — a 10-step, verification-gated playbook. The agent collects inputs, produces a working deployment on Fly.io / Railway / Vercel / Docker, and stops on any failure with the exact error.
 
 Minimal kickoff prompt:
 

@@ -1,0 +1,17 @@
+{
+  "$comment": "Manifest for the atrium-ops plugin shipped with this repo. When installed via `/plugin install atrium-ops`, Claude Code loads the four SKILL.md files under ../skills/ as triggerable skills.",
+  "name": "atrium-ops",
+  "version": "0.1.0",
+  "description": "Interactive skills for provisioning, diagnosing, and managing Atrium deployments.",
+  "author": {
+    "name": "Atrium Contributors",
+    "url": "https://github.com/kushal-goenka/atrium"
+  },
+  "license": "Apache-2.0",
+  "skills": [
+    "../skills/atrium-setup-org/SKILL.md",
+    "../skills/atrium-setup-dev/SKILL.md",
+    "../skills/atrium-add-provider/SKILL.md",
+    "../skills/atrium-diagnose/SKILL.md"
+  ]
+}
